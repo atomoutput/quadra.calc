@@ -409,6 +409,9 @@ function showDelayPopup(delayMs) {
     delayPopup.classList.add('show');
     delayPopup.setAttribute('aria-hidden', 'false');
 
+    // Ensure the pop-up is visible
+    delayPopup.style.display = 'block';
+
     // Add event listener to hide pop-up when clicked
     delayPopup.addEventListener('click', hideDelayPopup);
 }
@@ -419,12 +422,13 @@ function hideDelayPopup() {
     delayPopup.classList.add('hide');
     delayPopup.setAttribute('aria-hidden', 'true');
 
-    // Remove event listener after animation completes
+    // Remove event listener after animation completes to prevent multiple bindings
     delayPopup.removeEventListener('click', hideDelayPopup);
 
     // Hide the pop-up after animation
     setTimeout(() => {
         delayPopup.style.display = 'none';
+        delayPopup.classList.remove('hide');
     }, 300); // Match with CSS animation duration
 }
 
