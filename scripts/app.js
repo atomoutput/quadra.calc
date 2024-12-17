@@ -1,6 +1,6 @@
 /* scripts/app.js */
 
-// DOM Elements
+/* DOM Elements */
 const calculateBtn = document.getElementById('calculate-btn');
 const bpmInput = document.getElementById('bpm-input');
 const suggestionsTable = document.getElementById('suggestions-table').querySelector('tbody');
@@ -18,20 +18,22 @@ const savePresetBtn = document.getElementById('save-preset-btn');
 const presetNameInput = document.getElementById('preset-name');
 const presetsTable = document.getElementById('presets-table').querySelector('tbody');
 const notification = document.getElementById('notification');
+const installBtn = document.getElementById('install-btn');
 
-// State Variables
+/* State Variables */
 let customSubdivisions = [];
 let presets = JSON.parse(localStorage.getItem('delay_presets')) || [];
 let tapTimes = [];
 let tapTimeout;
 const maxTaps = 8;
+let deferredPrompt;
 
-// Initialize Theme based on user's system preference or default to dark
+/* Initialize Theme based on user's system preference or default to dark */
 const userPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
 document.body.setAttribute('data-theme', userPrefersDark ? 'dark' : 'light');
 updateThemeIcon();
 
-// Function to Update Theme Icon
+/* Function to Update Theme Icon */
 function updateThemeIcon() {
     const currentTheme = document.body.getAttribute('data-theme');
     if (currentTheme === 'dark') {
@@ -51,7 +53,7 @@ function updateThemeIcon() {
     }
 }
 
-// Function to Show Notifications
+/* Function to Show Notifications */
 function showNotification(message, type = 'success') {
     notification.textContent = message;
     notification.style.backgroundColor = type === 'success' ? 'var(--success-color)' : 'var(--error-color)';
@@ -61,7 +63,7 @@ function showNotification(message, type = 'success') {
     }, 3000);
 }
 
-// Theme Toggle Functionality
+/* Theme Toggle Functionality */
 themeToggle.addEventListener('click', () => {
     const currentTheme = document.body.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -69,7 +71,7 @@ themeToggle.addEventListener('click', () => {
     updateThemeIcon();
 });
 
-// Calculate Delay Times
+/* Calculate Delay Times */
 calculateBtn.addEventListener('click', () => {
     const bpm = parseInt(bpmInput.value);
     if (isNaN(bpm) || bpm <= 0) {
@@ -81,19 +83,27 @@ calculateBtn.addEventListener('click', () => {
     showNotification('Delay times calculated successfully!');
 });
 
-// Function to Calculate Delay Times
+/* Function to Calculate Delay Times */
 function calculateDelayTimes(bpm) {
     const beatDuration = 60000 / bpm; // Quarter note duration in ms
     const standardSubdivisions = {
-        'Whole Note': 4,
-        'Half Note': 2,
-        'Quarter Note': 1,
-        'Dotted Quarter': 1.5,
-        'Eighth Note': 0.5,
-        'Dotted Eighth': 0.75,
-        'Triplet Quarter': 0.6667,
-        'Triplet Eighth': 0.3333,
-        'Sixteenth Note': 0.25
+        // Simple Subdivisions
+        'Whole Note (1/1)': 4,
+        'Half Note (1/2)': 2,
+        'Quarter Note (1/4)': 1,
+        'Eighth Note (1/8)': 0.5,
+        'Sixteenth Note (1/16)': 0.25,
+        'Thirty-Second Note (1/32)': 0.125,
+
+        // Compound Subdivisions
+        'Dotted Half Note (3/4)': 3,
+        'Dotted Quarter Note (3/8)': 1.5,
+        'Dotted Eighth Note (3/16)': 0.75,
+        'Triplet Whole Note (2/3)': 2.6667,
+        'Triplet Half Note (2/3)': 1.3333,
+        'Triplet Quarter Note (2/3)': 0.6667,
+        'Triplet Eighth Note (2/3)': 0.3333,
+        'Triplet Sixteenth Note (2/3)': 0.1667
     };
     let allSubdivisions = { ...standardSubdivisions };
     customSubdivisions.forEach(sub => {
@@ -106,19 +116,66 @@ function calculateDelayTimes(bpm) {
     return delayTimes;
 }
 
-// Function to Populate Suggestions Table
+/* Function to Populate Suggestions Table with Categories */
 function populateSuggestions(delayTimes) {
     suggestionsTable.innerHTML = '';
-    for (const [subdivision, ms] of Object.entries(delayTimes)) {
+    const simpleSubdivisions = {
+        'Whole Note (1/1)': 4,
+        'Half Note (1/2)': 2,
+        'Quarter Note (1/4)': 1,
+        'Eighth Note (1/8)': 0.5,
+        'Sixteenth Note (1/16)': 0.25,
+        'Thirty-Second Note (1/32)': 0.125
+    };
+    const compoundSubdivisions = {
+        'Dotted Half Note (3/4)': 3,
+        'Dotted Quarter Note (3/8)': 1.5,
+        'Dotted Eighth Note (3/16)': 0.75,
+        'Triplet Whole Note (2/3)': 2.6667,
+        'Triplet Half Note (2/3)': 1.3333,
+        'Triplet Quarter Note (2/3)': 0.6667,
+        'Triplet Eighth Note (2/3)': 0.3333,
+        'Triplet Sixteenth Note (2/3)': 0.1667
+    };
+
+    // Function to Add Rows
+    function addRows(subdivisions, category) {
+        if (category) {
+            const categoryRow = suggestionsTable.insertRow();
+            const categoryCell = categoryRow.insertCell(0);
+            categoryCell.colSpan = 2;
+            categoryCell.textContent = category;
+            categoryCell.style.fontWeight = 'bold';
+            categoryCell.style.backgroundColor = 'rgba(30, 144, 255, 0.1)'; /* Light Dodger Blue */
+        }
+        for (const [subdivision, factor] of Object.entries(subdivisions)) {
+            const ms = (60000 / bpmInput.value) * factor;
+            const row = suggestionsTable.insertRow();
+            const cellSubdivision = row.insertCell(0);
+            const cellMs = row.insertCell(1);
+            cellSubdivision.textContent = subdivision;
+            cellMs.textContent = ms.toFixed(2) + ' ms';
+        }
+    }
+
+    // Add Simple Subdivisions
+    addRows(simpleSubdivisions, 'Simple Subdivisions');
+
+    // Add Compound Subdivisions
+    addRows(compoundSubdivisions, 'Compound Subdivisions');
+
+    // Add Custom Subdivisions
+    customSubdivisions.forEach(sub => {
+        const ms = (60000 / bpmInput.value) * sub.factor;
         const row = suggestionsTable.insertRow();
         const cellSubdivision = row.insertCell(0);
         const cellMs = row.insertCell(1);
-        cellSubdivision.textContent = subdivision;
+        cellSubdivision.textContent = sub.name;
         cellMs.textContent = ms.toFixed(2) + ' ms';
-    }
+    });
 }
 
-// Copy to Clipboard Functionality
+/* Copy to Clipboard Functionality */
 copyBtn.addEventListener('click', () => {
     let textToCopy = 'Delay Time Suggestions:\n';
     const rows = suggestionsTable.querySelectorAll('tr');
@@ -135,7 +192,7 @@ copyBtn.addEventListener('click', () => {
     });
 });
 
-// Tap Tempo Functionality
+/* Tap Tempo Functionality */
 tapBtn.addEventListener('click', () => {
     const now = Date.now();
     tapTimes.push(now);
@@ -170,7 +227,7 @@ tapBtn.addEventListener('click', () => {
     }
 });
 
-// Add Custom Subdivision
+/* Add Custom Subdivision */
 addSubdivisionBtn.addEventListener('click', () => {
     const name = subdivisionNameInput.value.trim();
     const factor = parseFloat(subdivisionFactorInput.value);
@@ -195,7 +252,7 @@ addSubdivisionBtn.addEventListener('click', () => {
     showNotification('Custom subdivision added!');
 });
 
-// Function to Update Custom Subdivisions Table
+/* Function to Update Custom Subdivisions Table */
 function updateCustomSubdivisionsTable() {
     customSubdivisionsTable.innerHTML = '';
     customSubdivisions.forEach((sub, index) => {
@@ -227,7 +284,7 @@ function updateCustomSubdivisionsTable() {
     });
 }
 
-// Save Preset
+/* Save Preset */
 savePresetBtn.addEventListener('click', () => {
     const name = presetNameInput.value.trim();
     const bpm = parseInt(bpmInput.value);
@@ -248,7 +305,7 @@ savePresetBtn.addEventListener('click', () => {
     showNotification('Preset saved successfully!');
 });
 
-// Function to Update Presets Table
+/* Function to Update Presets Table */
 function updatePresetsTable() {
     presetsTable.innerHTML = '';
     presets.forEach((preset, index) => {
@@ -296,10 +353,10 @@ function updatePresetsTable() {
     });
 }
 
-// Initialize Presets Table on Load
+/* Initialize Presets Table on Load */
 updatePresetsTable();
 
-// Initialize with Default BPM if Present
+/* Initialize with Default BPM if Present */
 window.addEventListener('load', () => {
     if (bpmInput.value) {
         const bpm = parseInt(bpmInput.value);
@@ -307,5 +364,28 @@ window.addEventListener('load', () => {
             const delayTimes = calculateDelayTimes(bpm);
             populateSuggestions(delayTimes);
         }
+    }
+});
+
+/* Listen for beforeinstallprompt Event to Show Install Button */
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.style.display = 'flex'; // Show the install button
+    showNotification('You can install quadra.calc as an app!', 'success');
+});
+
+/* Handle Install Button Click */
+installBtn.addEventListener('click', async () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            showNotification('App installed successfully!', 'success');
+        } else {
+            showNotification('App installation canceled.', 'error');
+        }
+        deferredPrompt = null;
+        installBtn.style.display = 'none';
     }
 });

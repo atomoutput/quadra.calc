@@ -6,6 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>quadra.calc</title>
     
+    <!-- Preconnect for Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Asynchronously Load Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    </noscript>
+    
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
     
@@ -13,11 +23,8 @@
     <link rel="icon" href="assets/icons/icon-192x192.png" sizes="192x192" type="image/png">
     
     <!-- Meta Tags for PWA -->
-    <meta name="theme-color" content="#009688">
+    <meta name="theme-color" content="#6A5ACD">
     <meta name="description" content="quadra.calc - A PWA inspired by Alesis Quadraverb FX unit for delay setup.">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     
     <!-- Link to CSS -->
     <link rel="stylesheet" href="styles/styles.css">
@@ -37,47 +44,22 @@
 
     <!-- Header with Refined Animated Logo -->
     <header class="app-header">
+        <!-- Updated Logo: Abstract Musical Note -->
         <svg id="logo" xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-            <!-- Central Circle with Quadrants -->
-            <circle cx="50" cy="50" r="40" fill="url(#grad1)" stroke="var(--primary-dark)" stroke-width="2"/>
-            
-            <!-- Dividing Lines for Quadrants -->
-            <line x1="50" y1="10" x2="50" y2="90" stroke="var(--on-surface)" stroke-width="1"/>
-            <line x1="10" y1="50" x2="90" y2="50" stroke="var(--on-surface)" stroke-width="1"/>
-            
-            <!-- Abstract Waveform Lines in Each Quadrant -->
-            <path d="M30 30 Q35 25, 40 30 T50 30" stroke="var(--accent-color)" stroke-width="1" fill="none"/>
-            <path d="M60 30 Q65 25, 70 30 T80 30" stroke="var(--accent-color)" stroke-width="1" fill="none"/>
-            <path d="M60 70 Q65 75, 70 70 T80 70" stroke="var(--accent-color)" stroke-width="1" fill="none"/>
-            <path d="M30 70 Q35 75, 40 70 T50 70" stroke="var(--accent-color)" stroke-width="1" fill="none"/>
-            
+            <!-- Abstract Musical Note -->
+            <path d="M40 30 L40 70 C40 80, 60 80, 60 70 C60 60, 80 60, 80 70" fill="none" stroke="var(--accent-color)" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="70" cy="70" r="5" fill="var(--secondary-accent-color)"/>
             <!-- quadra.calc Text -->
-            <text x="50%" y="55%" dominant-baseline="middle" text-anchor="middle" font-size="18" font-weight="700" fill="var(--on-surface)">
+            <text x="50%" y="90%" dominant-baseline="middle" text-anchor="middle" font-size="16" font-weight="700" fill="var(--text-color)" font-family="Roboto, sans-serif">
                 quadra.calc
             </text>
-            
-            <!-- Gradient Definition -->
-            <defs>
-                <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style="stop-color:var(--primary-light);stop-opacity:1" />
-                    <stop offset="100%" style="stop-color:var(--primary-dark);stop-opacity:1" />
-                </linearGradient>
-            </defs>
-            
-            <!-- Subtle Pulse Animation -->
-            <animateTransform attributeType="xml"
-                attributeName="transform"
-                type="scale"
-                values="1;1.05;1"
-                dur="10s"
-                repeatCount="indefinite"/>
         </svg>
     </header>
 
     <!-- Main Content Grid -->
     <main class="main-grid">
-        <!-- BPM Input Card -->
-        <div class="section card" aria-labelledby="bpm-section">
+        <!-- BPM Input Card (Smaller Height) -->
+        <div class="section card bpm-input-card" aria-labelledby="bpm-section">
             <h2 id="bpm-section">BPM Input</h2>
             <div class="input-group">
                 <label for="bpm-input">BPM:</label>
@@ -92,8 +74,8 @@
             </button>
         </div>
 
-        <!-- Tap Tempo Card -->
-        <div class="section card" aria-labelledby="tap-section">
+        <!-- Tap Tempo Card (Larger) -->
+        <div class="section card tap-tempo-card" aria-labelledby="tap-section">
             <h2 id="tap-section">Tap Tempo</h2>
             <button id="tap-btn" aria-label="Tap to Set BPM">
                 <!-- Tap Icon -->
@@ -109,7 +91,7 @@
         </div>
 
         <!-- Delay Time Suggestions Card -->
-        <div class="section card" aria-labelledby="suggestions-section">
+        <div class="section card delay-suggestions-card" aria-labelledby="suggestions-section">
             <h2 id="suggestions-section">Delay Time Suggestions</h2>
             <table id="suggestions-table" aria-label="Delay Time Suggestions">
                 <thead>
@@ -132,7 +114,7 @@
         </div>
 
         <!-- Custom Subdivisions Card -->
-        <div class="section card" aria-labelledby="custom-subdivisions-section">
+        <div class="section card custom-subdivisions-card" aria-labelledby="custom-subdivisions-section">
             <h2 id="custom-subdivisions-section">Custom Subdivisions</h2>
             <div class="input-group">
                 <label for="subdivision-name">Subdivision Name:</label>
@@ -164,7 +146,7 @@
         </div>
 
         <!-- Presets Card -->
-        <div class="section card" aria-labelledby="presets-section">
+        <div class="section card presets-card" aria-labelledby="presets-section">
             <h2 id="presets-section">Presets</h2>
             <div class="input-group">
                 <label for="preset-name">Preset Name:</label>
@@ -196,8 +178,17 @@
             <!-- Notification message -->
         </div>
 
+        <!-- Install Button (Initially Hidden) -->
+        <button id="install-btn" class="action-button" style="display: none;" aria-label="Install App">
+            <!-- Install Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2L8 6h3v6h2V6h3l-4-4zM5 18v-2h14v2H5z"/>
+            </svg>
+            Install
+        </button>
+
         <!-- Link to JavaScript -->
-        <script src="scripts/app.js"></script>
+        <script src="scripts/app.js" defer></script>
 
         <!-- Service Worker Registration -->
         <script>
