@@ -1,7 +1,7 @@
 /* sw.js */
 
-const CACHE_NAME = 'quadra-calc-cache-v1';
-const ASSETS_TO_CACHE = [
+const CACHE_NAME = 'quadra.calc-v1';
+const urlsToCache = [
     '/',
     '/index.html',
     '/styles/styles.css',
@@ -9,64 +9,73 @@ const ASSETS_TO_CACHE = [
     '/manifest.json',
     '/assets/icons/icon-192x192.png',
     '/assets/icons/icon-512x512.png',
-    // Add any other assets you want to cache
+    // Add any additional assets you want to cache
 ];
 
-// Install Event - Cache Assets
+// Install the service worker and cache resources
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-        .then((cache) => {
-            console.log('Caching Assets');
-            return cache.addAll(ASSETS_TO_CACHE);
-        })
-        .catch((error) => {
-            console.error('Error caching assets:', error);
-        })
+            .then((cache) => {
+                console.log('Opened cache');
+                return cache.addAll(urlsToCache);
+            })
     );
 });
 
-// Activate Event - Clean Old Caches
-self.addEventListener('activate', (event) => {
-    event.waitUntil(
-        caches.keys()
-        .then((cacheNames) => {
-            return Promise.all(
-                cacheNames.filter((cacheName) => {
-                    return cacheName !== CACHE_NAME;
-                }).map((cacheName) => {
-                    return caches.delete(cacheName);
-                })
-            );
-        })
-    );
-});
-
-// Fetch Event - Serve Cached Assets
+// Cache and return requests
 self.addEventListener('fetch', (event) => {
     event.respondWith(
         caches.match(event.request)
-        .then((response) => {
-            // Return cached asset if found
-            if (response) {
-                return response;
-            }
-            // Fetch from network if not cached
-            return fetch(event.request)
-                .then((fetchResponse) => {
-                    // Cache the new asset
-                    return caches.open(CACHE_NAME)
-                        .then((cache) => {
-                            cache.put(event.request, fetchResponse.clone());
-                            return fetchResponse;
-                        });
-                })
-                .catch(() => {
-                    // Fallback behavior if both cache and network fail
-                    if (event.request.destination === 'document') {
-                        return caches.match('/index.html');
+            .then((response) => {
+                // Cache hit - return response
+                if (response) {
+                    return response;
+                }
+                // IMPORTANT: Clone the request. A request is a stream and
+                // can only be consumed once. Since we are consuming this
+                // once by cache and once by the browser for fetch, we need
+                // to clone the response.
+                const fetchRequest = event.request.clone();
+
+                return fetch(fetchRequest).then(
+                    (response) => {
+                        // Check if we received a valid response
+                        if (!response || response.status !== 200 || response.type !== 'basic') {
+                            return response;
+                        }
+
+                        // IMPORTANT: Clone the response. A response is a stream
+                        // and because we want the browser to consume the response
+                        // as well as the cache consuming the response, we need
+                        // to clone it so we have two streams.
+                        const responseToCache = response.clone();
+
+                        caches.open(CACHE_NAME)
+                            .then((cache) => {
+                                cache.put(event.request, responseToCache);
+                            });
+
+                        return response;
                     }
-                });
+                );
+            })
+    );
+});
+
+// Update the service worker
+self.addEventListener('activate', (event) => {
+    const cacheWhitelist = [CACHE_NAME];
+    event.waitUntil(
+        caches.keys().then((cacheNames) => {
+            return Promise.all(
+                cacheNames.map((cacheName) => {
+                    if (!cacheWhitelist.includes(cacheName)) {
+                        console.log('Deleting old cache:', cacheName);
+                        return caches.delete(cacheName);
+                    }
+                })
+            );
         })
     );
 });

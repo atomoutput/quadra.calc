@@ -42,7 +42,6 @@ let deferredPrompt;
 ========================= */
 initializeTheme();
 initializePresets();
-initializePopups();
 
 /* =========================
    Theme Management
@@ -279,8 +278,10 @@ addSubdivisionBtn.addEventListener('click', () => {
     updateCustomSubdivisionsTable();
     if (bpmInput.value) {
         const bpm = parseInt(bpmInput.value);
-        const delayTimes = calculateDelayTimes(bpm);
-        populateSuggestions(delayTimes);
+        if (!isNaN(bpm) && bpm > 0) {
+            const delayTimes = calculateDelayTimes(bpm);
+            populateSuggestions(delayTimes);
+        }
     }
     showNotification('Custom subdivision added!');
 });
@@ -305,7 +306,7 @@ function updateCustomSubdivisionsTable() {
             customSubdivisions.splice(index, 1);
             updateCustomSubdivisionsTable();
             const bpm = parseInt(bpmInput.value);
-            if (bpm && bpm > 0) {
+            if (!isNaN(bpm) && bpm > 0) {
                 const delayTimes = calculateDelayTimes(bpm);
                 populateSuggestions(delayTimes);
             }
@@ -331,13 +332,13 @@ savePresetBtn.addEventListener('click', () => {
         showNotification('Preset name already exists.', 'error');
         return;
     }
-    const preset = { name, bpm, customSubdivisions };
+    const preset = { name, bpm, customSubdivisions: [...customSubdivisions] };
     presets.push(preset);
     localStorage.setItem('delay_presets', JSON.stringify(presets));
     presetNameInput.value = '';
     updatePresetsTable();
     showNotification('Preset saved successfully!');
-}
+});
 
 function updatePresetsTable() {
     presetsTable.innerHTML = '';
@@ -396,10 +397,6 @@ function initializePresets() {
 /* =========================
    Pop-up Card for Copied Delay Value
 ========================= */
-function initializePopups() {
-    // No initial setup required as pop-up is managed via event listeners
-}
-
 /* Function to Show Delay Pop-up with Animation and Icon */
 function showDelayPopup(delayMs) {
     popupContent.innerHTML = `
@@ -411,9 +408,6 @@ function showDelayPopup(delayMs) {
     delayPopup.classList.remove('hide');
     delayPopup.classList.add('show');
     delayPopup.setAttribute('aria-hidden', 'false');
-
-    // Remove 'hide' class if present
-    delayPopup.classList.remove('hide');
 
     // Add event listener to hide pop-up when clicked
     delayPopup.addEventListener('click', hideDelayPopup);

@@ -1,8 +1,6 @@
 /* styles/styles.css */
 
-/* =========================
-   Color Variables
-========================= */
+/* Color Variables */
 :root {
     --primary-color: #6A5ACD; /* Slate Blue */
     --primary-light: #8470FF; /* Light Slate Blue */
@@ -36,9 +34,7 @@
     --border-color: #696969; /* Dim Gray */
 }
 
-/* =========================
-   Global Styles
-========================= */
+/* Global Styles */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -57,9 +53,7 @@ body {
     transition: background-color 0.3s, color 0.3s;
 }
 
-/* =========================
-   Theme Toggle and Help Buttons
-========================= */
+/* Theme Toggle and Help Buttons */
 .theme-toggle {
     position: fixed;
     top: 20px;
@@ -98,9 +92,7 @@ body {
     outline: 2px solid var(--accent-color);
 }
 
-/* =========================
-   Header Styling
-========================= */
+/* Header Styling */
 .app-header {
     display: flex;
     justify-content: center;
@@ -116,11 +108,15 @@ body {
     justify-content: center;
 }
 
-/* Logo Styling */
+/* Updated Logo Styling */
 #logo {
     width: 80px;
     height: 80px;
     transition: transform 0.3s ease-in-out;
+}
+
+/* Logo Animation */
+#logo {
     animation: pulse 10s infinite;
 }
 
@@ -139,6 +135,7 @@ body {
     }
 }
 
+/* Logo Hover Effect */
 #logo:hover {
     transform: scale(1.05);
 }
@@ -154,9 +151,7 @@ body {
     color: var(--text-color);
 }
 
-/* =========================
-   Main Content Grid
-========================= */
+/* Main Content Grid */
 .main-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -187,9 +182,7 @@ body {
     grid-row: span 1;
 }
 
-/* =========================
-   Sections
-========================= */
+/* Sections */
 .section {
     background-color: var(--surface-color);
     padding: 20px;
@@ -208,9 +201,7 @@ body {
     color: var(--text-color);
 }
 
-/* =========================
-   Input Groups
-========================= */
+/* Input Groups */
 .input-group {
     display: flex;
     flex-direction: column;
@@ -239,9 +230,7 @@ body {
     background-color: var(--background-color);
 }
 
-/* =========================
-   Buttons
-========================= */
+/* Buttons */
 button {
     display: flex;
     align-items: center;
@@ -286,9 +275,7 @@ button .icon {
     font-size: 16px;
 }
 
-/* =========================
-   Tables
-========================= */
+/* Tables */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -360,9 +347,7 @@ tr:hover {
     background-color: #1C86EE; /* Dodger Blue Darker */
 }
 
-/* =========================
-   Tap Tempo Indicator
-========================= */
+/* Tap Tempo Indicator */
 .tap-indicator {
     width: 100%;
     height: 8px;
@@ -387,9 +372,7 @@ tr:hover {
     color: var(--text-color);
 }
 
-/* =========================
-   Notification
-========================= */
+/* Notification */
 .notification {
     position: fixed;
     bottom: 20px;
@@ -409,9 +392,7 @@ tr:hover {
     opacity: 1;
 }
 
-/* =========================
-   Install Button Styling
-========================= */
+/* Install Button Styling */
 #install-btn {
     display: none; /* Initially hidden */
     width: 100%;
@@ -443,9 +424,7 @@ tr:hover {
     outline: 2px solid var(--accent-color);
 }
 
-/* =========================
-   Pop-up Card Styling with Animations
-========================= */
+/* Pop-up Card Styling with Animations */
 .delay-popup {
     display: none; /* Hidden by default */
     position: fixed;
@@ -520,9 +499,29 @@ tr:hover {
     text-align: center;
 }
 
-/* =========================
-   Modal Styling
-========================= */
+/* Responsive Adjustments for Pop-up Card */
+@media (max-width: 600px) {
+    .delay-popup {
+        padding: 20px; /* Reduce padding for smaller screens */
+    }
+
+    .popup-content span {
+        font-size: 36px; /* Reduce font size for smaller screens */
+    }
+
+    .popup-icon {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* Copied Row Styling */
+.copied {
+    background-color: rgba(50, 205, 50, 0.3) !important; /* Lime Green with some transparency */
+    transition: background-color 0.3s ease;
+}
+
+/* Modal Styling */
 .modal {
     display: none; /* Hidden by default */
     position: fixed;
@@ -578,9 +577,7 @@ tr:hover {
     color: var(--text-color);
 }
 
-/* =========================
-   Footer Styling
-========================= */
+/* Footer Styling */
 .app-footer {
     margin-top: 40px;
     text-align: center;
@@ -599,35 +596,63 @@ tr:hover {
     color: var(--primary-light);
 }
 
-/* =========================
-   Additional Styles
-========================= */
-
-/* Copied Row Styling */
-.copied {
-    background-color: rgba(50, 205, 50, 0.3) !important; /* Lime Green with some transparency */
-    transition: background-color 0.3s ease;
+/* Responsive Adjustments */
+@media (max-width: 1200px) {
+    .tap-tempo-card {
+        grid-row: span 1; /* Adjust Tap Tempo card to span single row on medium screens */
+    }
 }
 
-/* Pop-up Icon Styling */
-.popup-icon {
-    display: block;
-    margin: 0 auto 20px auto;
-    width: 48px;
-    height: 48px;
+@media (max-width: 800px) {
+    .main-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .tap-tempo-card {
+        grid-row: span 1;
+    }
 }
 
-/* Pop-up Content Styling Adjustments */
-.popup-content span {
-    display: block;
-    font-size: 48px;
-    font-weight: bold;
-    color: var(--primary-color);
-    text-align: center;
-}
-
-/* Responsive Adjustments for Pop-up Card */
 @media (max-width: 600px) {
+    .section {
+        padding: 15px;
+    }
+
+    h2 {
+        font-size: 18px;
+    }
+
+    button {
+        font-size: 14px;
+        padding: 8px 12px;
+    }
+
+    .regular-btn {
+        height: 36px; /* Further reduce height for smaller screens */
+        padding: 6px 10px;
+    }
+
+    .input-group input {
+        font-size: 14px;
+        padding: 8px 10px;
+    }
+
+    th, td {
+        padding: 10px 6px;
+        font-size: 12px;
+    }
+
+    .theme-toggle,
+    #help-btn {
+        padding: 8px;
+        font-size: 16px;
+    }
+
+    .modal-content {
+        margin: 20% auto;
+        width: 90%;
+    }
+
     .delay-popup {
         padding: 20px; /* Reduce padding for smaller screens */
     }
