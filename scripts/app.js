@@ -42,6 +42,7 @@ let deferredPrompt;
 ========================= */
 initializeTheme();
 initializePresets();
+initializePopup();
 
 /* =========================
    Theme Management
@@ -232,7 +233,7 @@ tapBtn.addEventListener('click', () => {
     if (tapTimeout) clearTimeout(tapTimeout);
     tapTimeout = setTimeout(() => {
         tapTimes = [];
-        tapFeedback.textContent = 'Tap the button in time to set BPM.';
+        tapFeedback.textContent = '';
         tapProgress.style.width = '0%';
     }, 1500); // Reset taps if no tap within 1.5 seconds
 
@@ -397,6 +398,12 @@ function initializePresets() {
 /* =========================
    Pop-up Card for Copied Delay Value
 ========================= */
+/* Initialize Pop-up Event Listener */
+function initializePopup() {
+    // Add a single event listener to hide the pop-up when clicked
+    delayPopup.addEventListener('click', hideDelayPopup);
+}
+
 /* Function to Show Delay Pop-up with Animation and Icon */
 function showDelayPopup(delayMs) {
     popupContent.innerHTML = `
@@ -411,9 +418,6 @@ function showDelayPopup(delayMs) {
 
     // Ensure the pop-up is visible
     delayPopup.style.display = 'block';
-
-    // Add event listener to hide pop-up when clicked
-    delayPopup.addEventListener('click', hideDelayPopup);
 }
 
 /* Function to Hide Delay Pop-up with Animation */
@@ -421,9 +425,6 @@ function hideDelayPopup() {
     delayPopup.classList.remove('show');
     delayPopup.classList.add('hide');
     delayPopup.setAttribute('aria-hidden', 'true');
-
-    // Remove event listener after animation completes to prevent multiple bindings
-    delayPopup.removeEventListener('click', hideDelayPopup);
 
     // Hide the pop-up after animation
     setTimeout(() => {
