@@ -1,54 +1,72 @@
-// sw.js
+/* sw.js */
 
-const CACHE_NAME = 'quadra.calc-v1';
-const urlsToCache = [
+const CACHE_NAME = 'quadra-calc-cache-v1';
+const ASSETS_TO_CACHE = [
     '/',
     '/index.html',
     '/styles/styles.css',
     '/scripts/app.js',
+    '/manifest.json',
     '/assets/icons/icon-192x192.png',
     '/assets/icons/icon-512x512.png',
-    // Add other assets you want to cache
+    // Add any other assets you want to cache
 ];
 
-// Install Service Worker
-self.addEventListener('install', event => {
+// Install Event - Cache Assets
+self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
-        .then(cache => {
-            console.log('Opened cache');
-            return cache.addAll(urlsToCache);
+        .then((cache) => {
+            console.log('Caching Assets');
+            return cache.addAll(ASSETS_TO_CACHE);
+        })
+        .catch((error) => {
+            console.error('Error caching assets:', error);
         })
     );
 });
 
-// Fetch Assets
-self.addEventListener('fetch', event => {
+// Activate Event - Clean Old Caches
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys()
+        .then((cacheNames) => {
+            return Promise.all(
+                cacheNames.filter((cacheName) => {
+                    return cacheName !== CACHE_NAME;
+                }).map((cacheName) => {
+                    return caches.delete(cacheName);
+                })
+            );
+        })
+    );
+});
+
+// Fetch Event - Serve Cached Assets
+self.addEventListener('fetch', (event) => {
     event.respondWith(
         caches.match(event.request)
-        .then(response => {
-            // Cache hit - return response
+        .then((response) => {
+            // Return cached asset if found
             if (response) {
                 return response;
             }
-            return fetch(event.request);
-        })
-    );
-});
-
-// Update Service Worker
-self.addEventListener('activate', event => {
-    const cacheWhitelist = [CACHE_NAME];
-    event.waitUntil(
-        caches.keys()
-        .then(cacheNames => {
-            return Promise.all(
-                cacheNames.map(cacheName => {
-                    if (!cacheWhitelist.includes(cacheName)) {
-                        return caches.delete(cacheName);
-                    }
+            // Fetch from network if not cached
+            return fetch(event.request)
+                .then((fetchResponse) => {
+                    // Cache the new asset
+                    return caches.open(CACHE_NAME)
+                        .then((cache) => {
+                            cache.put(event.request, fetchResponse.clone());
+                            return fetchResponse;
+                        });
                 })
-            );
+                .catch(() => {
+                    // Fallback behavior if both cache and network fail
+                    if (event.request.destination === 'document') {
+                        return caches.match('/index.html');
+                    }
+                });
         })
     );
 });

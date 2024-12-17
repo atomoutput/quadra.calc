@@ -1,6 +1,8 @@
 /* scripts/app.js */
 
-/* DOM Elements */
+/* =========================
+   DOM Elements
+========================= */
 const calculateBtn = document.getElementById('calculate-btn');
 const bpmInput = document.getElementById('bpm-input');
 const suggestionsTable = document.getElementById('suggestions-table').querySelector('tbody');
@@ -22,8 +24,12 @@ const installBtn = document.getElementById('install-btn');
 const helpBtn = document.getElementById('help-btn');
 const helpModal = document.getElementById('help-modal');
 const closeHelpModal = document.getElementById('close-help-modal');
+const delayPopup = document.getElementById('delay-popup');
+const popupContent = document.getElementById('popup-content');
 
-/* State Variables */
+/* =========================
+   State Variables
+========================= */
 let customSubdivisions = [];
 let presets = JSON.parse(localStorage.getItem('delay_presets')) || [];
 let tapTimes = [];
@@ -31,14 +37,34 @@ let tapTimeout;
 const maxTaps = 8;
 let deferredPrompt;
 
-/* Initialize Theme based on user's system preference or saved preference */
-const savedTheme = localStorage.getItem('theme');
-const userPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-const initialTheme = savedTheme || (userPrefersDark ? 'dark' : 'light');
-document.body.setAttribute('data-theme', initialTheme);
-updateThemeIcon();
+/* =========================
+   Initialization
+========================= */
+initializeTheme();
+initializePresets();
+initializePopups();
 
-/* Function to Update Theme Icon */
+/* =========================
+   Theme Management
+========================= */
+function initializeTheme() {
+    const savedTheme = localStorage.getItem('theme');
+    const userPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme = savedTheme || (userPrefersDark ? 'dark' : 'light');
+    document.body.setAttribute('data-theme', initialTheme);
+    updateThemeIcon();
+
+    themeToggle.addEventListener('click', toggleTheme);
+}
+
+function toggleTheme() {
+    const currentTheme = document.body.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    updateThemeIcon();
+}
+
 function updateThemeIcon() {
     const currentTheme = document.body.getAttribute('data-theme');
     if (currentTheme === 'dark') {
@@ -58,27 +84,12 @@ function updateThemeIcon() {
     }
 }
 
-/* Function to Show Notifications */
-function showNotification(message, type = 'success') {
-    notification.textContent = message;
-    notification.style.backgroundColor = type === 'success' ? 'var(--success-color)' : 'var(--error-color)';
-    notification.classList.add('show');
-    setTimeout(() => {
-        notification.classList.remove('show');
-    }, 3000);
-}
+/* =========================
+   Delay Time Calculations
+========================= */
+calculateBtn.addEventListener('click', handleCalculate);
 
-/* Theme Toggle Functionality */
-themeToggle.addEventListener('click', () => {
-    const currentTheme = document.body.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    document.body.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    updateThemeIcon();
-});
-
-/* Calculate Delay Times */
-calculateBtn.addEventListener('click', () => {
+function handleCalculate() {
     const bpm = parseInt(bpmInput.value);
     if (isNaN(bpm) || bpm <= 0) {
         showNotification('Please enter a valid BPM.', 'error');
@@ -87,9 +98,8 @@ calculateBtn.addEventListener('click', () => {
     const delayTimes = calculateDelayTimes(bpm);
     populateSuggestions(delayTimes);
     showNotification('Delay times calculated successfully!');
-});
+}
 
-/* Function to Calculate Delay Times */
 function calculateDelayTimes(bpm) {
     const beatDuration = 60000 / bpm; // Quarter note duration in ms
     const standardSubdivisions = {
@@ -122,7 +132,6 @@ function calculateDelayTimes(bpm) {
     return delayTimes;
 }
 
-/* Function to Populate Suggestions Table with Categories */
 function populateSuggestions(delayTimes) {
     suggestionsTable.innerHTML = '';
     const simpleSubdivisions = {
@@ -158,6 +167,10 @@ function populateSuggestions(delayTimes) {
         for (const [subdivision, factor] of Object.entries(subdivisions)) {
             const ms = (60000 / bpmInput.value) * factor;
             const row = suggestionsTable.insertRow();
+            row.classList.add('clickable-row'); // Add class for JavaScript
+            row.setAttribute('tabindex', '0'); // Make focusable
+            row.setAttribute('role', 'button'); // Role as button
+            row.setAttribute('aria-label', `Copy delay time for ${subdivision}, ${ms.toFixed(2)} milliseconds`);
             const cellSubdivision = row.insertCell(0);
             const cellMs = row.insertCell(1);
             cellSubdivision.textContent = subdivision;
@@ -175,14 +188,23 @@ function populateSuggestions(delayTimes) {
     customSubdivisions.forEach(sub => {
         const ms = (60000 / bpmInput.value) * sub.factor;
         const row = suggestionsTable.insertRow();
+        row.classList.add('clickable-row'); // Add class for JavaScript
+        row.setAttribute('tabindex', '0'); // Make focusable
+        row.setAttribute('role', 'button'); // Role as button
+        row.setAttribute('aria-label', `Copy delay time for ${sub.name}, ${ms.toFixed(2)} milliseconds`);
         const cellSubdivision = row.insertCell(0);
         const cellMs = row.insertCell(1);
         cellSubdivision.textContent = sub.name;
         cellMs.textContent = ms.toFixed(2) + ' ms';
     });
+
+    /* After populating the table, add event listeners to the new rows */
+    addDelayRowEventListeners();
 }
 
-/* Copy to Clipboard Functionality */
+/* =========================
+   Copy to Clipboard Functionality
+========================= */
 copyBtn.addEventListener('click', () => {
     let textToCopy = 'Delay Time Suggestions:\n';
     const rows = suggestionsTable.querySelectorAll('tr');
@@ -199,7 +221,9 @@ copyBtn.addEventListener('click', () => {
     });
 });
 
-/* Tap Tempo Functionality */
+/* =========================
+   Tap Tempo Functionality
+========================= */
 tapBtn.addEventListener('click', () => {
     const now = Date.now();
     tapTimes.push(now);
@@ -234,7 +258,9 @@ tapBtn.addEventListener('click', () => {
     }
 });
 
-/* Add Custom Subdivision */
+/* =========================
+   Custom Subdivisions Management
+========================= */
 addSubdivisionBtn.addEventListener('click', () => {
     const name = subdivisionNameInput.value.trim();
     const factor = parseFloat(subdivisionFactorInput.value);
@@ -259,7 +285,6 @@ addSubdivisionBtn.addEventListener('click', () => {
     showNotification('Custom subdivision added!');
 });
 
-/* Function to Update Custom Subdivisions Table */
 function updateCustomSubdivisionsTable() {
     customSubdivisionsTable.innerHTML = '';
     customSubdivisions.forEach((sub, index) => {
@@ -291,7 +316,9 @@ function updateCustomSubdivisionsTable() {
     });
 }
 
-/* Save Preset */
+/* =========================
+   Presets Management
+========================= */
 savePresetBtn.addEventListener('click', () => {
     const name = presetNameInput.value.trim();
     const bpm = parseInt(bpmInput.value);
@@ -310,9 +337,8 @@ savePresetBtn.addEventListener('click', () => {
     presetNameInput.value = '';
     updatePresetsTable();
     showNotification('Preset saved successfully!');
-});
+}
 
-/* Function to Update Presets Table */
 function updatePresetsTable() {
     presetsTable.innerHTML = '';
     presets.forEach((preset, index) => {
@@ -363,21 +389,126 @@ function updatePresetsTable() {
     });
 }
 
-/* Initialize Presets Table on Load */
-updatePresetsTable();
+function initializePresets() {
+    updatePresetsTable();
+}
 
-/* Initialize with Default BPM if Present */
-window.addEventListener('load', () => {
-    if (bpmInput.value) {
-        const bpm = parseInt(bpmInput.value);
-        if (!isNaN(bpm) && bpm > 0) {
-            const delayTimes = calculateDelayTimes(bpm);
-            populateSuggestions(delayTimes);
-        }
-    }
-});
+/* =========================
+   Pop-up Card for Copied Delay Value
+========================= */
+function initializePopups() {
+    // No initial setup required as pop-up is managed via event listeners
+}
 
-/* Listen for beforeinstallprompt Event to Show Install Button */
+/* Function to Show Delay Pop-up with Animation and Icon */
+function showDelayPopup(delayMs) {
+    popupContent.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" class="popup-icon" viewBox="0 0 24 24" width="48" height="48" fill="green">
+            <path d="M20.285,6.708l-11.49,11.49l-5.659-5.659L5.596,13.024L8.565,16L19.7,4.865l-1.414-1.414Z"/>
+        </svg>
+        <span>${delayMs} ms</span>
+    `;
+    delayPopup.classList.remove('hide');
+    delayPopup.classList.add('show');
+    delayPopup.setAttribute('aria-hidden', 'false');
+
+    // Remove 'hide' class if present
+    delayPopup.classList.remove('hide');
+
+    // Add event listener to hide pop-up when clicked
+    delayPopup.addEventListener('click', hideDelayPopup);
+}
+
+/* Function to Hide Delay Pop-up with Animation */
+function hideDelayPopup() {
+    delayPopup.classList.remove('show');
+    delayPopup.classList.add('hide');
+    delayPopup.setAttribute('aria-hidden', 'true');
+
+    // Remove event listener after animation completes
+    delayPopup.removeEventListener('click', hideDelayPopup);
+
+    // Hide the pop-up after animation
+    setTimeout(() => {
+        delayPopup.style.display = 'none';
+    }, 300); // Match with CSS animation duration
+}
+
+/* =========================
+   Notification System
+========================= */
+function showNotification(message, type = 'success') {
+    notification.textContent = message;
+    notification.style.backgroundColor = type === 'success' ? 'var(--success-color)' : 'var(--error-color)';
+    notification.classList.add('show');
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 3000);
+}
+
+/* =========================
+   Clipboard and Pop-up Interaction
+========================= */
+/* Generic Debounce Function */
+function debounce(func, delay) {
+    let timeoutId;
+    return function(...args) {
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+            func.apply(this, args);
+        }, delay);
+    };
+}
+
+/* Function to Handle Row Clicks and Keyboard Activation */
+function handleRowClick(row) {
+    const subdivision = row.cells[0].textContent;
+    const delayMsText = row.cells[1].textContent;
+    const delayMs = delayMsText.replace(' ms', '');
+
+    // Copy to Clipboard
+    navigator.clipboard.writeText(delayMs)
+        .then(() => {
+            showNotification(`Copied ${delayMs} ms to clipboard!`);
+            // Add temporary class for visual confirmation
+            row.classList.add('copied');
+            setTimeout(() => {
+                row.classList.remove('copied');
+            }, 1000); // Remove after 1 second
+        })
+        .catch(() => {
+            showNotification('Failed to copy delay time.', 'error');
+        });
+
+    // Show Pop-up Card
+    showDelayPopup(delayMs);
+}
+
+/* Debounced Handle Row Click */
+const debouncedHandleRowClick = debounce(handleRowClick, 300);
+
+/* Function to Add Event Listeners to Delay Suggestions Rows */
+function addDelayRowEventListeners() {
+    const clickableRows = document.querySelectorAll('.delay-suggestions-card table tbody tr.clickable-row');
+    clickableRows.forEach(row => {
+        // Mouse Click
+        row.addEventListener('click', () => {
+            debouncedHandleRowClick(row);
+        });
+
+        // Keyboard Interaction
+        row.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault(); // Prevent scrolling on Space
+                debouncedHandleRowClick(row);
+            }
+        });
+    });
+}
+
+/* =========================
+   Install Button Functionality
+========================= */
 window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
@@ -400,7 +531,9 @@ installBtn.addEventListener('click', async () => {
     }
 });
 
-/* Help Modal Functionality */
+/* =========================
+   Help Modal Functionality
+========================= */
 /* Open Help Modal */
 helpBtn.addEventListener('click', () => {
     helpModal.style.display = 'block';
@@ -418,45 +551,5 @@ window.addEventListener('click', (event) => {
     if (event.target === helpModal) {
         helpModal.style.display = 'none';
         helpModal.setAttribute('aria-hidden', 'true');
-    }
-});
-
-/* Form Validation Feedback */
-
-/* BPM Input Validation */
-bpmInput.addEventListener('input', () => {
-    const bpm = parseInt(bpmInput.value);
-    if (isNaN(bpm) || bpm <= 0) {
-        bpmInput.style.borderColor = 'var(--error-color)';
-    } else {
-        bpmInput.style.borderColor = 'var(--border-color)';
-    }
-});
-
-/* Subdivision Name Validation */
-subdivisionNameInput.addEventListener('input', () => {
-    if (subdivisionNameInput.value.trim() === '') {
-        subdivisionNameInput.style.borderColor = 'var(--error-color)';
-    } else {
-        subdivisionNameInput.style.borderColor = 'var(--border-color)';
-    }
-});
-
-/* Subdivision Factor Validation */
-subdivisionFactorInput.addEventListener('input', () => {
-    const factor = parseFloat(subdivisionFactorInput.value);
-    if (isNaN(factor) || factor <= 0) {
-        subdivisionFactorInput.style.borderColor = 'var(--error-color)';
-    } else {
-        subdivisionFactorInput.style.borderColor = 'var(--border-color)';
-    }
-});
-
-/* Preset Name Validation */
-presetNameInput.addEventListener('input', () => {
-    if (presetNameInput.value.trim() === '') {
-        presetNameInput.style.borderColor = 'var(--error-color)';
-    } else {
-        presetNameInput.style.borderColor = 'var(--border-color)';
     }
 });

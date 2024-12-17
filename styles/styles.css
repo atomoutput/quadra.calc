@@ -1,6 +1,8 @@
 /* styles/styles.css */
 
-/* Color Variables */
+/* =========================
+   Color Variables
+========================= */
 :root {
     --primary-color: #6A5ACD; /* Slate Blue */
     --primary-light: #8470FF; /* Light Slate Blue */
@@ -34,7 +36,9 @@
     --border-color: #696969; /* Dim Gray */
 }
 
-/* Global Styles */
+/* =========================
+   Global Styles
+========================= */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -53,7 +57,9 @@ body {
     transition: background-color 0.3s, color 0.3s;
 }
 
-/* Theme Toggle and Help Buttons */
+/* =========================
+   Theme Toggle and Help Buttons
+========================= */
 .theme-toggle {
     position: fixed;
     top: 20px;
@@ -92,7 +98,9 @@ body {
     outline: 2px solid var(--accent-color);
 }
 
-/* Header Styling */
+/* =========================
+   Header Styling
+========================= */
 .app-header {
     display: flex;
     justify-content: center;
@@ -108,15 +116,11 @@ body {
     justify-content: center;
 }
 
-/* Updated Logo Styling */
+/* Logo Styling */
 #logo {
     width: 80px;
     height: 80px;
     transition: transform 0.3s ease-in-out;
-}
-
-/* Logo Animation */
-#logo {
     animation: pulse 10s infinite;
 }
 
@@ -135,7 +139,6 @@ body {
     }
 }
 
-/* Logo Hover Effect */
 #logo:hover {
     transform: scale(1.05);
 }
@@ -151,7 +154,9 @@ body {
     color: var(--text-color);
 }
 
-/* Main Content Grid */
+/* =========================
+   Main Content Grid
+========================= */
 .main-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -182,7 +187,9 @@ body {
     grid-row: span 1;
 }
 
-/* Sections */
+/* =========================
+   Sections
+========================= */
 .section {
     background-color: var(--surface-color);
     padding: 20px;
@@ -201,7 +208,9 @@ body {
     color: var(--text-color);
 }
 
-/* Input Groups */
+/* =========================
+   Input Groups
+========================= */
 .input-group {
     display: flex;
     flex-direction: column;
@@ -230,7 +239,9 @@ body {
     background-color: var(--background-color);
 }
 
-/* Buttons */
+/* =========================
+   Buttons
+========================= */
 button {
     display: flex;
     align-items: center;
@@ -275,7 +286,9 @@ button .icon {
     font-size: 16px;
 }
 
-/* Tables */
+/* =========================
+   Tables
+========================= */
 table {
     width: 100%;
     border-collapse: collapse;
@@ -317,6 +330,16 @@ tr:hover {
     text-align: center; /* Center-align table cells */
 }
 
+/* Make Table Rows Clickable */
+.delay-suggestions-card table tbody tr {
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.delay-suggestions-card table tbody tr:hover {
+    background-color: rgba(30, 144, 255, 0.2); /* Slightly darker on hover */
+}
+
 /* Action Buttons within Tables */
 .action-button {
     background-color: var(--secondary-accent-color);
@@ -337,7 +360,9 @@ tr:hover {
     background-color: #1C86EE; /* Dodger Blue Darker */
 }
 
-/* Tap Tempo Indicator */
+/* =========================
+   Tap Tempo Indicator
+========================= */
 .tap-indicator {
     width: 100%;
     height: 8px;
@@ -362,7 +387,9 @@ tr:hover {
     color: var(--text-color);
 }
 
-/* Notification */
+/* =========================
+   Notification
+========================= */
 .notification {
     position: fixed;
     bottom: 20px;
@@ -382,7 +409,9 @@ tr:hover {
     opacity: 1;
 }
 
-/* Install Button Styling */
+/* =========================
+   Install Button Styling
+========================= */
 #install-btn {
     display: none; /* Initially hidden */
     width: 100%;
@@ -414,106 +443,86 @@ tr:hover {
     outline: 2px solid var(--accent-color);
 }
 
-/* Responsive Adjustments */
-@media (max-width: 1200px) {
-    .tap-tempo-card {
-        grid-row: span 1; /* Adjust Tap Tempo card to span single row on medium screens */
-    }
-}
-
-@media (max-width: 800px) {
-    .main-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .tap-tempo-card {
-        grid-row: span 1;
-    }
-}
-
-@media (max-width: 600px) {
-    .section {
-        padding: 15px;
-    }
-
-    h2 {
-        font-size: 18px;
-    }
-
-    button {
-        font-size: 14px;
-        padding: 8px 12px;
-    }
-
-    .regular-btn {
-        height: 36px; /* Further reduce height for smaller screens */
-        padding: 6px 10px;
-    }
-
-    .input-group input {
-        font-size: 14px;
-        padding: 8px 10px;
-    }
-
-    th, td {
-        padding: 10px 6px;
-        font-size: 12px;
-    }
-
-    .theme-toggle,
-    #help-btn {
-        padding: 8px;
-        font-size: 16px;
-    }
-
-    .modal-content {
-        margin: 20% auto;
-        width: 90%;
-    }
-}
-
-/* Tooltip Styling */
-.tooltip {
-    position: relative;
-    display: inline-block;
-    cursor: pointer;
-}
-
-.tooltip .tooltiptext {
-    visibility: hidden;
-    width: 160px;
-    background-color: var(--text-color);
-    color: var(--surface-color);
-    text-align: center;
-    border-radius: 6px;
-    padding: 5px 0;
-    position: absolute;
-    z-index: 1;
-    bottom: 125%; /* Position above the element */
+/* =========================
+   Pop-up Card Styling with Animations
+========================= */
+.delay-popup {
+    display: none; /* Hidden by default */
+    position: fixed;
+    top: 50%;
     left: 50%;
-    margin-left: -80px;
+    transform: translate(-50%, -50%) scale(0.8);
+    background-color: var(--surface-color);
+    border: 2px solid var(--primary-color);
+    border-radius: 12px;
+    padding: 40px;
+    z-index: 1002; /* Above other elements */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    cursor: pointer; /* Allow clicking to close */
     opacity: 0;
-    transition: opacity 0.3s;
+    transition: opacity 0.3s ease, transform 0.3s ease;
 }
 
-.tooltip:hover .tooltiptext {
-    visibility: visible;
+.delay-popup.show {
+    display: block;
     opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
 }
 
-/* Optional: Arrow for Tooltip */
-.tooltip .tooltiptext::after {
-    content: "";
-    position: absolute;
-    top: 100%; /* At the bottom of the tooltip */
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: var(--text-color) transparent transparent transparent;
+.delay-popup.hide {
+    animation: popOut 0.3s forwards;
 }
 
-/* Modal Styling */
+@keyframes popIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+@keyframes popOut {
+    from {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.8);
+    }
+}
+
+.delay-popup.show {
+    animation: popIn 0.3s forwards;
+}
+
+.delay-popup.hide {
+    animation: popOut 0.3s forwards;
+}
+
+/* Pop-up Icon Styling */
+.popup-icon {
+    display: block;
+    margin: 0 auto 20px auto;
+    width: 48px;
+    height: 48px;
+}
+
+/* Pop-up Content Styling Adjustments */
+.popup-content span {
+    display: block;
+    font-size: 48px;
+    font-weight: bold;
+    color: var(--primary-color);
+    text-align: center;
+}
+
+/* =========================
+   Modal Styling
+========================= */
 .modal {
     display: none; /* Hidden by default */
     position: fixed;
@@ -569,7 +578,9 @@ tr:hover {
     color: var(--text-color);
 }
 
-/* Footer Styling */
+/* =========================
+   Footer Styling
+========================= */
 .app-footer {
     margin-top: 40px;
     text-align: center;
@@ -586,4 +597,47 @@ tr:hover {
 
 .app-footer a:hover {
     color: var(--primary-light);
+}
+
+/* =========================
+   Additional Styles
+========================= */
+
+/* Copied Row Styling */
+.copied {
+    background-color: rgba(50, 205, 50, 0.3) !important; /* Lime Green with some transparency */
+    transition: background-color 0.3s ease;
+}
+
+/* Pop-up Icon Styling */
+.popup-icon {
+    display: block;
+    margin: 0 auto 20px auto;
+    width: 48px;
+    height: 48px;
+}
+
+/* Pop-up Content Styling Adjustments */
+.popup-content span {
+    display: block;
+    font-size: 48px;
+    font-weight: bold;
+    color: var(--primary-color);
+    text-align: center;
+}
+
+/* Responsive Adjustments for Pop-up Card */
+@media (max-width: 600px) {
+    .delay-popup {
+        padding: 20px; /* Reduce padding for smaller screens */
+    }
+
+    .popup-content span {
+        font-size: 36px; /* Reduce font size for smaller screens */
+    }
+
+    .popup-icon {
+        width: 36px;
+        height: 36px;
+    }
 }

@@ -5,32 +5,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>quadra.calc</title>
-    
+
     <!-- Preconnect for Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
+
     <!-- Asynchronously Load Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript>
         <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     </noscript>
-    
+
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
-    
+
     <!-- Favicon -->
     <link rel="icon" href="assets/icons/icon-192x192.png" sizes="192x192" type="image/png">
-    
+    <link rel="apple-touch-icon" href="assets/icons/icon-512x512.png">
+
     <!-- Meta Tags for PWA -->
     <meta name="theme-color" content="#6A5ACD">
     <meta name="description" content="quadra.calc - A PWA inspired by Alesis Quadraverb FX unit for delay setup.">
-    
+
     <!-- Link to CSS -->
     <link rel="stylesheet" href="styles/styles.css">
 </head>
 <body data-theme="dark">
-    
+
     <!-- Theme Toggle Button -->
     <button class="theme-toggle" id="theme-toggle" aria-label="Toggle Theme">
         <!-- Moon and Sun SVG Icons -->
@@ -39,6 +40,14 @@
             <path id="moon-icon" d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z" fill="currentColor"/>
             <!-- Sun Icon (hidden by default) -->
             <path id="sun-icon" d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.8 1.8 1.41-1.42zM10.27 2.05l-1.8 1.8 1.41 1.41 1.8-1.8-1.41-1.41zM12 5a7 7 0 000 14 7 7 0 000-14zm0 12a5 5 0 110-10 5 5 0 010 10zm6.24 1.16l1.79 1.8 1.41-1.41-1.8-1.8-1.41 1.41zM17.16 19.16l1.8 1.8 1.41-1.41-1.8-1.8-1.41 1.41zM12 19a7 7 0 007-7h-2a5 5 0 01-5 5v2z" fill="currentColor" style="display: none;"/>
+        </svg>
+    </button>
+
+    <!-- Help Toggle Button -->
+    <button class="theme-toggle" id="help-btn" aria-label="Open Help">
+        <!-- Help Icon -->
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path d="M12 0C5.37258 0 0 5.37258 0 12C0 18.6274 5.37258 24 12 24C18.6274 24 24 18.6274 24 12C24 5.37258 18.6274 0 12 0ZM12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM12 5C10.3431 5 9 6.34315 9 8H11C11 7.44772 11.4477 7 12 7C12.5523 7 13 7.44772 13 8C13 9.65685 14.3431 11 16 11V13C14.3431 13 13 14.3431 13 16H11C11 14.3431 9.65685 13 8 13V11C9.65685 11 11 9.65685 11 8H9C9 6.34315 10.3431 5 12 5ZM13 18H11V15H13V18Z" fill="currentColor"/>
         </svg>
     </button>
 
@@ -60,7 +69,7 @@
 
     <!-- Main Content Grid -->
     <main class="main-grid">
-        <!-- BPM Input Card (Smaller Height) -->
+        <!-- BPM Input Card -->
         <div class="section card bpm-input-card" aria-labelledby="bpm-section">
             <h2 id="bpm-section">BPM Input</h2>
             <div class="input-group">
@@ -220,13 +229,12 @@
             </div>
         </div>
 
-        <!-- Help Toggle Button -->
-        <button class="theme-toggle" id="help-btn" aria-label="Open Help">
-            <!-- Help Icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
-                <path d="M12 0C5.37258 0 0 5.37258 0 12C0 18.6274 5.37258 24 12 24C18.6274 24 24 18.6274 24 12C24 5.37258 18.6274 0 12 0ZM12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22ZM12 5C10.3431 5 9 6.34315 9 8H11C11 7.44772 11.4477 7 12 7C12.5523 7 13 7.44772 13 8C13 9.65685 14.3431 11 16 11V13C14.3431 13 13 14.3431 13 16H11C11 14.3431 9.65685 13 8 13V11C9.65685 11 11 9.65685 11 8H9C9 6.34315 10.3431 5 12 5ZM13 18H11V15H13V18Z" fill="currentColor"/>
-            </svg>
-        </button>
+        <!-- Pop-up Card for Copied Delay Value -->
+        <div id="delay-popup" class="delay-popup" aria-hidden="true" role="dialog" aria-labelledby="popup-content">
+            <div class="popup-content" id="popup-content">
+                <!-- Pop-up content will be inserted here by JavaScript -->
+            </div>
+        </div>
 
         <!-- Footer -->
         <footer class="app-footer">

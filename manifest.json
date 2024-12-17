@@ -1,12 +1,24 @@
 {
-    "name": "QuadraCalc",
-    "short_name": "QuadraCalc",
-    "start_url": "./index.html",
-    "display": "standalone",
-    "background_color": "#121212",
-    "theme_color": "#0d47a1",
-    "description": "A delay calculator inspired by the Alesis Quadraverb.",
+    "short_name": "quadra.calc",
+    "name": "quadra.calc - BPM Delay Calculator",
+    "description": "A Progressive Web App inspired by Alesis Quadraverb FX unit for delay setup.",
     "icons": [
-        
-    ]
+        {
+            "src": "assets/icons/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "assets/icons/icon-512x512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#6A5ACD",
+    "theme_color": "#6A5ACD",
+    "orientation": "portrait-primary",
+    "scope": ".",
+    "lang": "en"
 }
