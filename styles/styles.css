@@ -53,11 +53,11 @@ body {
     transition: background-color 0.3s, color 0.3s;
 }
 
-/* Theme Toggle Button */
+/* Theme Toggle and Help Buttons */
 .theme-toggle {
     position: fixed;
     top: 20px;
-    right: 20px;
+    right: 60px; /* Adjusted to accommodate both Theme and Help buttons */
     background-color: var(--primary-color);
     border: none;
     color: var(--on-primary);
@@ -68,12 +68,27 @@ body {
     transition: background-color 0.3s, transform 0.3s;
 }
 
-.theme-toggle:hover {
-    background-color: var(--primary-light);
+#help-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: var(--secondary-accent-color);
+    border: none;
+    color: var(--on-secondary);
+    padding: 10px;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    transition: background-color 0.3s, transform 0.3s;
+}
+
+.theme-toggle:hover,
+#help-btn:hover {
     transform: scale(1.1);
 }
 
-.theme-toggle:focus {
+.theme-toggle:focus,
+#help-btn:focus {
     outline: 2px solid var(--accent-color);
 }
 
@@ -255,8 +270,8 @@ button .icon {
 /* Regular Buttons for Uniform Size */
 .regular-btn {
     width: 100%;
-    height: 40px; /* Adjusted for smaller height */
-    padding: 8px 12px; /* Reduced padding for smaller height */
+    height: 40px; /* Consistent height */
+    padding: 8px 12px; /* Consistent padding */
     font-size: 16px;
 }
 
@@ -294,9 +309,15 @@ tr:hover {
 .custom-subdivisions-card th,
 .presets-card th {
     background-color: var(--primary-color);
+    text-align: center; /* Center-align headers */
 }
 
-/* Action Buttons */
+.custom-subdivisions-card td,
+.presets-card td {
+    text-align: center; /* Center-align table cells */
+}
+
+/* Action Buttons within Tables */
 .action-button {
     background-color: var(--secondary-accent-color);
     color: var(--on-secondary);
@@ -439,7 +460,8 @@ tr:hover {
         font-size: 12px;
     }
 
-    .theme-toggle {
+    .theme-toggle,
+    #help-btn {
         padding: 8px;
         font-size: 16px;
     }

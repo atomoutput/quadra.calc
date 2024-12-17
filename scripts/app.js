@@ -19,7 +19,7 @@ const presetNameInput = document.getElementById('preset-name');
 const presetsTable = document.getElementById('presets-table').querySelector('tbody');
 const notification = document.getElementById('notification');
 const installBtn = document.getElementById('install-btn');
-const helpBtn = document.getElementById('help-btn'); // Ensure helpBtn exists
+const helpBtn = document.getElementById('help-btn');
 const helpModal = document.getElementById('help-modal');
 const closeHelpModal = document.getElementById('close-help-modal');
 
@@ -153,6 +153,7 @@ function populateSuggestions(delayTimes) {
             categoryCell.textContent = category;
             categoryCell.style.fontWeight = 'bold';
             categoryCell.style.backgroundColor = 'rgba(30, 144, 255, 0.1)'; /* Light Dodger Blue */
+            categoryCell.style.textAlign = 'center';
         }
         for (const [subdivision, factor] of Object.entries(subdivisions)) {
             const ms = (60000 / bpmInput.value) * factor;
@@ -353,6 +354,9 @@ function updatePresetsTable() {
 
         // Action Buttons Container
         const actionContainer = document.createElement('div');
+        actionContainer.style.display = 'flex';
+        actionContainer.style.justifyContent = 'center';
+        actionContainer.style.gap = '10px';
         actionContainer.appendChild(loadBtn);
         actionContainer.appendChild(deleteBtn);
         cellAction.appendChild(actionContainer);
