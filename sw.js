@@ -1,69 +1,54 @@
-/* sw.js */
+// sw.js
 
-// Define a cache name with versioning
-const CACHE_NAME = 'quadra-calc-cache-v1';
-
-// Assets to cache during the installation
-const ASSETS_TO_CACHE = [
-    './index.html',
-    './styles/styles.css',
-    './scripts/app.js',
-    './manifest.json',
-    './assets/icons/icon-192x192.png',
-    './assets/icons/icon-512x512.png',
-    // Add any additional assets here
+const CACHE_NAME = 'quadra.calc-v1';
+const urlsToCache = [
+    '/',
+    '/index.html',
+    '/styles/styles.css',
+    '/scripts/app.js',
+    '/assets/icons/icon-192x192.png',
+    '/assets/icons/icon-512x512.png',
+    // Add other assets you want to cache
 ];
 
-/* Install Event - Cache Assets */
+// Install Service Worker
 self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
         .then(cache => {
-            console.log('Caching app shell');
-            return cache.addAll(ASSETS_TO_CACHE);
+            console.log('Opened cache');
+            return cache.addAll(urlsToCache);
         })
     );
 });
 
-/* Activate Event - Clean Up Old Caches */
-self.addEventListener('activate', event => {
-    event.waitUntil(
-        caches.keys()
-        .then(cacheNames => {
-            return Promise.all(
-                cacheNames.map(cache => {
-                    if (cache !== CACHE_NAME) {
-                        console.log('Deleting old cache:', cache);
-                        return caches.delete(cache);
-                    }
-                })
-            );
-        })
-    );
-});
-
-/* Fetch Event - Serve Cached Content When Offline */
+// Fetch Assets
 self.addEventListener('fetch', event => {
     event.respondWith(
         caches.match(event.request)
         .then(response => {
+            // Cache hit - return response
             if (response) {
-                return response; // Return cached asset
+                return response;
             }
-            return fetch(event.request)
-                .then(fetchResponse => {
-                    return caches.open(CACHE_NAME)
-                        .then(cache => {
-                            cache.put(event.request, fetchResponse.clone());
-                            return fetchResponse;
-                        });
-                })
-                .catch(() => {
-                    // Fallback content if both cache and network fail
-                    if (event.request.destination === 'document') {
-                        return caches.match('./index.html');
+            return fetch(event.request);
+        })
+    );
+});
+
+// Update Service Worker
+self.addEventListener('activate', event => {
+    const cacheWhitelist = [CACHE_NAME];
+    event.waitUntil(
+        caches.keys()
+        .then(cacheNames => {
+            return Promise.all(
+                cacheNames.map(cacheName => {
+                    if (!cacheWhitelist.includes(cacheName)) {
+                        return caches.delete(cacheName);
                     }
-                });
+                })
+            );
         })
     );
 });

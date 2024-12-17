@@ -121,7 +121,7 @@ body {
 .main-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    grid-auto-rows: minmax(200px, auto);
+    grid-template-rows: auto;
     grid-gap: 20px;
     width: 100%;
     max-width: 1200px;
@@ -133,7 +133,7 @@ body {
 }
 
 .tap-tempo-card {
-    grid-row: span 2;
+    grid-column: span 2; /* Span two columns to make it larger */
 }
 
 .delay-suggestions-card {
@@ -157,6 +157,49 @@ body {
     display: flex;
     flex-direction: column;
     transition: background-color 0.3s;
+}
+
+/* Modal Content */
+.modal-content {
+    background-color: var(--surface-color);
+    margin: 10% auto;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    width: 80%;
+    max-width: 600px;
+    position: relative;
+    animation: slideIn 0.5s;
+}
+
+@keyframes slideIn {
+    from {transform: translateY(-50px); opacity: 0;}
+    to {transform: translateY(0); opacity: 1;}
+}
+
+.close-button {
+    color: var(--text-color);
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-button:hover,
+.close-button:focus {
+    color: var(--error-color);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.modal-content h2 {
+    margin-bottom: 15px;
+    font-size: 24px;
+    color: var(--text-color);
+}
+
+.modal-content p {
+    color: var(--text-color);
 }
 
 .section h2 {
@@ -265,6 +308,17 @@ tr:hover {
     transition: background-color 0.3s ease;
 }
 
+/* Different Shade for Tables in Custom Subdivisions and Presets */
+.custom-subdivisions-card table,
+.presets-card table {
+    background-color: var(--surface-color);
+}
+
+.custom-subdivisions-card th,
+.presets-card th {
+    background-color: var(--primary-color);
+}
+
 /* Action Buttons */
 .action-button {
     background-color: var(--secondary-accent-color);
@@ -364,6 +418,12 @@ tr:hover {
 }
 
 /* Responsive Adjustments */
+@media (max-width: 1200px) {
+    .tap-tempo-card {
+        grid-column: span 1; /* Adjust Tap Tempo card to span single column on smaller screens */
+    }
+}
+
 @media (max-width: 800px) {
     .main-grid {
         grid-template-columns: 1fr;
@@ -371,6 +431,7 @@ tr:hover {
 
     .tap-tempo-card {
         grid-row: span 1;
+        grid-column: span 1;
     }
 }
 
