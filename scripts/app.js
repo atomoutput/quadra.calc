@@ -19,7 +19,7 @@ const presetNameInput = document.getElementById('preset-name');
 const presetsTable = document.getElementById('presets-table').querySelector('tbody');
 const notification = document.getElementById('notification');
 const installBtn = document.getElementById('install-btn');
-const helpBtn = document.getElementById('help-btn');
+const helpBtn = document.getElementById('help-btn'); // Ensure helpBtn exists
 const helpModal = document.getElementById('help-modal');
 const closeHelpModal = document.getElementById('close-help-modal');
 

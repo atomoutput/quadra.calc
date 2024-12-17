@@ -44,16 +44,18 @@
 
     <!-- Header with Refined Animated Logo -->
     <header class="app-header">
-        <!-- Updated Logo: Abstract Musical Note -->
-        <svg id="logo" xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100">
-            <!-- Abstract Musical Note -->
-            <path d="M40 30 L40 70 C40 80, 60 80, 60 70 C60 60, 80 60, 80 70" fill="none" stroke="var(--accent-color)" stroke-width="5" stroke-linecap="round"/>
-            <circle cx="70" cy="70" r="5" fill="var(--secondary-accent-color)"/>
+        <!-- Logo Container -->
+        <div class="logo-container">
+            <svg id="logo" xmlns="http://www.w3.org/2000/svg" width="80" height="80" viewBox="0 0 100 100">
+                <!-- Abstract Musical Note -->
+                <path d="M40 30 L40 70 C40 80, 60 80, 60 70 C60 60, 80 60, 80 70" fill="none" stroke="var(--accent-color)" stroke-width="5" stroke-linecap="round"/>
+                <circle cx="70" cy="70" r="5" fill="var(--secondary-accent-color)"/>
+            </svg>
             <!-- quadra.calc Text -->
-            <text x="50%" y="90%" dominant-baseline="middle" text-anchor="middle" font-size="16" font-weight="700" fill="var(--text-color)" font-family="Roboto, sans-serif">
-                quadra.calc
-            </text>
-        </svg>
+            <div class="logo-text">
+                <span>quadra.calc</span>
+            </div>
+        </div>
     </header>
 
     <!-- Main Content Grid -->
@@ -68,7 +70,7 @@
             <div class="tooltip">
                 <button id="calculate-btn" class="regular-btn" aria-label="Calculate Delay Times">
                     <!-- Calculate Icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                         <path d="M19 3H5c-1.1 0-2 .9-2 2v14h2V5h14V3zm-7 14l-5-5 1.41-1.41L12 14.17l3.59-3.58L17 10l-5 5z"/>
                     </svg>
                     Calculate
@@ -80,9 +82,9 @@
         <!-- Tap Tempo Card (Larger) -->
         <div class="section card tap-tempo-card" aria-labelledby="tap-section">
             <h2 id="tap-section">Tap Tempo</h2>
-            <button id="tap-btn" aria-label="Tap to Set BPM">
+            <button id="tap-btn" class="regular-btn" aria-label="Tap to Set BPM">
                 <!-- Tap Icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                     <path d="M19 13H5v-2h14v2z"/>
                 </svg>
                 Tap
@@ -110,7 +112,7 @@
             <div class="tooltip">
                 <button id="copy-btn" class="regular-btn" aria-label="Copy Delay Times to Clipboard">
                     <!-- Copy Icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                         <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h15v14z"/>
                     </svg>
                     Copy
@@ -133,7 +135,7 @@
             <div class="tooltip">
                 <button id="add-subdivision-btn" class="regular-btn" aria-label="Add Custom Subdivision">
                     <!-- Add Icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                         <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
                     </svg>
                     Add
@@ -164,7 +166,7 @@
             <div class="tooltip">
                 <button id="save-preset-btn" class="regular-btn" aria-label="Save Current Settings as Preset">
                     <!-- Save Icon -->
-                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                         <path d="M17 3H5c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 12l-5-2.14L7 15V5h10v10z"/>
                     </svg>
                     Save
@@ -191,9 +193,9 @@
         </div>
 
         <!-- Install Button -->
-        <button id="install-btn" class="action-button" style="display: none;" aria-label="Install App">
+        <button id="install-btn" class="regular-btn" style="display: none;" aria-label="Install App">
             <!-- Install Icon -->
-            <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
                 <path d="M12 2L8 6h3v6h2V6h3l-4-4zM5 18v-2h14v2H5z"/>
             </svg>
             Install
