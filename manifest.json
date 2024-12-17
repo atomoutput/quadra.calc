@@ -1,0 +1,12 @@
+{
+    "name": "QuadraCalc",
+    "short_name": "QuadraCalc",
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#121212",
+    "theme_color": "#0d47a1",
+    "description": "A delay calculator inspired by the Alesis Quadraverb.",
+    "icons": [
+        
+    ]
+}
