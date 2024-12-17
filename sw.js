@@ -2,13 +2,13 @@
 
 const CACHE_NAME = 'quadra.calc-v1';
 const urlsToCache = [
-    '/',
-    '/index.html',
-    '/styles/styles.css',
-    '/scripts/app.js',
-    '/manifest.json',
-    '/assets/icons/icon-192x192.png',
-    '/assets/icons/icon-512x512.png',
+    './',
+    './index.html',
+    './styles/styles.css',
+    './scripts/app.js',
+    './manifest.json',
+    './assets/icons/icon-192x192.png',
+    './assets/icons/icon-512x512.png',
     // Add any additional assets you want to cache
 ];
 

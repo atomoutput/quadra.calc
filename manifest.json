@@ -2,7 +2,7 @@
     "name": "quadra.calc",
     "short_name": "quadra.calc",
     "description": "quadra.calc - A PWA inspired by Alesis Quadraverb FX unit for delay setup.",
-    "start_url": ".",
+    "start_url": "./index.html",
     "display": "standalone",
     "background_color": "#6A5ACD",
     "theme_color": "#6A5ACD",
