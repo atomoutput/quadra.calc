@@ -65,13 +65,16 @@
                 <label for="bpm-input">BPM:</label>
                 <input type="number" id="bpm-input" placeholder="Enter BPM" min="30" max="300" aria-required="true">
             </div>
-            <button id="calculate-btn" aria-label="Calculate Delay Times">
-                <!-- Calculate Icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19 3H5c-1.1 0-2 .9-2 2v14h2V5h14V3zm-7 14l-5-5 1.41-1.41L12 14.17l3.59-3.58L17 10l-5 5z"/>
-                </svg>
-                Calculate
-            </button>
+            <div class="tooltip">
+                <button id="calculate-btn" class="regular-btn" aria-label="Calculate Delay Times">
+                    <!-- Calculate Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 3H5c-1.1 0-2 .9-2 2v14h2V5h14V3zm-7 14l-5-5 1.41-1.41L12 14.17l3.59-3.58L17 10l-5 5z"/>
+                    </svg>
+                    Calculate
+                </button>
+                <span class="tooltiptext">Click to calculate delay times based on BPM</span>
+            </div>
         </div>
 
         <!-- Tap Tempo Card (Larger) -->
@@ -104,13 +107,16 @@
                     <!-- Suggestions will be populated here -->
                 </tbody>
             </table>
-            <button id="copy-btn" aria-label="Copy Delay Times to Clipboard">
-                <!-- Copy Icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h15v14z"/>
-                </svg>
-                Copy
-            </button>
+            <div class="tooltip">
+                <button id="copy-btn" class="regular-btn" aria-label="Copy Delay Times to Clipboard">
+                    <!-- Copy Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h15c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h15v14z"/>
+                    </svg>
+                    Copy
+                </button>
+                <span class="tooltiptext">Copy all delay times to clipboard</span>
+            </div>
         </div>
 
         <!-- Custom Subdivisions Card -->
@@ -124,13 +130,16 @@
                 <label for="subdivision-factor">Factor (relative to quarter note):</label>
                 <input type="number" id="subdivision-factor" placeholder="e.g., 1.5" step="0.1" min="0.1" aria-required="true">
             </div>
-            <button id="add-subdivision-btn" aria-label="Add Custom Subdivision">
-                <!-- Add Icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
-                </svg>
-                Add
-            </button>
+            <div class="tooltip">
+                <button id="add-subdivision-btn" class="regular-btn" aria-label="Add Custom Subdivision">
+                    <!-- Add Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+                    </svg>
+                    Add
+                </button>
+                <span class="tooltiptext">Add a new custom subdivision</span>
+            </div>
             <table id="custom-subdivisions-table" aria-label="Custom Subdivisions">
                 <thead>
                     <tr>
@@ -152,13 +161,16 @@
                 <label for="preset-name">Preset Name:</label>
                 <input type="text" id="preset-name" placeholder="Preset Name" aria-required="true">
             </div>
-            <button id="save-preset-btn" aria-label="Save Current Settings as Preset">
-                <!-- Save Icon -->
-                <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M17 3H5c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 12l-5-2.14L7 15V5h10v10z"/>
-                </svg>
-                Save
-            </button>
+            <div class="tooltip">
+                <button id="save-preset-btn" class="regular-btn" aria-label="Save Current Settings as Preset">
+                    <!-- Save Icon -->
+                    <svg xmlns="http://www.w3.org/2000/svg" class="icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17 3H5c-1.1 0-2 .9-2 2v16l7-3 7 3V5c0-1.1-.9-2-2-2zm0 12l-5-2.14L7 15V5h10v10z"/>
+                    </svg>
+                    Save
+                </button>
+                <span class="tooltiptext">Save current settings as a preset</span>
+            </div>
             <table id="presets-table" aria-label="Saved Presets">
                 <thead>
                     <tr>
@@ -186,6 +198,33 @@
             </svg>
             Install
         </button>
+
+        <!-- Help Modal -->
+        <div id="help-modal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="help-modal-title" aria-describedby="help-modal-description">
+            <div class="modal-content">
+                <span class="close-button" id="close-help-modal" aria-label="Close Help">&times;</span>
+                <h2 id="help-modal-title">How to Use quadra.calc</h2>
+                <p id="help-modal-description">
+                    <ul>
+                        <li><strong>BPM Input:</strong> Enter the Beats Per Minute to calculate delay times.</li>
+                        <li><strong>Tap Tempo:</strong> Tap the button in rhythm to set BPM automatically.</li>
+                        <li><strong>Delay Time Suggestions:</strong> View suggested delay times based on your BPM.</li>
+                        <li><strong>Custom Subdivisions:</strong> Add your own subdivisions for personalized delay settings.</li>
+                        <li><strong>Presets:</strong> Save and load your favorite delay configurations.</li>
+                        <li><strong>Theme Toggle:</strong> Switch between Light and Dark modes for better visibility.</li>
+                    </ul>
+                </p>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>© 2024 quadra.calc. All rights reserved.</p>
+            <p>
+                <a href="https://github.com/your-repo" target="_blank" rel="noopener noreferrer">GitHub</a> |
+                <a href="mailto:contact@quadra.calc">Contact Us</a>
+            </p>
+        </footer>
 
         <!-- Link to JavaScript -->
         <script src="scripts/app.js" defer></script>

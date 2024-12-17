@@ -19,6 +19,9 @@ const presetNameInput = document.getElementById('preset-name');
 const presetsTable = document.getElementById('presets-table').querySelector('tbody');
 const notification = document.getElementById('notification');
 const installBtn = document.getElementById('install-btn');
+const helpBtn = document.getElementById('help-btn');
+const helpModal = document.getElementById('help-modal');
+const closeHelpModal = document.getElementById('close-help-modal');
 
 /* State Variables */
 let customSubdivisions = [];
@@ -28,9 +31,11 @@ let tapTimeout;
 const maxTaps = 8;
 let deferredPrompt;
 
-/* Initialize Theme based on user's system preference or default to dark */
+/* Initialize Theme based on user's system preference or saved preference */
+const savedTheme = localStorage.getItem('theme');
 const userPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-document.body.setAttribute('data-theme', userPrefersDark ? 'dark' : 'light');
+const initialTheme = savedTheme || (userPrefersDark ? 'dark' : 'light');
+document.body.setAttribute('data-theme', initialTheme);
 updateThemeIcon();
 
 /* Function to Update Theme Icon */
@@ -68,6 +73,7 @@ themeToggle.addEventListener('click', () => {
     const currentTheme = document.body.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     document.body.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
     updateThemeIcon();
 });
 
@@ -387,5 +393,66 @@ installBtn.addEventListener('click', async () => {
         }
         deferredPrompt = null;
         installBtn.style.display = 'none';
+    }
+});
+
+/* Help Modal Functionality */
+/* Open Help Modal */
+helpBtn.addEventListener('click', () => {
+    helpModal.style.display = 'block';
+    helpModal.setAttribute('aria-hidden', 'false');
+});
+
+/* Close Help Modal */
+closeHelpModal.addEventListener('click', () => {
+    helpModal.style.display = 'none';
+    helpModal.setAttribute('aria-hidden', 'true');
+});
+
+/* Close Modal when clicking outside of the modal content */
+window.addEventListener('click', (event) => {
+    if (event.target === helpModal) {
+        helpModal.style.display = 'none';
+        helpModal.setAttribute('aria-hidden', 'true');
+    }
+});
+
+/* Form Validation Feedback */
+
+/* BPM Input Validation */
+bpmInput.addEventListener('input', () => {
+    const bpm = parseInt(bpmInput.value);
+    if (isNaN(bpm) || bpm <= 0) {
+        bpmInput.style.borderColor = 'var(--error-color)';
+    } else {
+        bpmInput.style.borderColor = 'var(--border-color)';
+    }
+});
+
+/* Subdivision Name Validation */
+subdivisionNameInput.addEventListener('input', () => {
+    if (subdivisionNameInput.value.trim() === '') {
+        subdivisionNameInput.style.borderColor = 'var(--error-color)';
+    } else {
+        subdivisionNameInput.style.borderColor = 'var(--border-color)';
+    }
+});
+
+/* Subdivision Factor Validation */
+subdivisionFactorInput.addEventListener('input', () => {
+    const factor = parseFloat(subdivisionFactorInput.value);
+    if (isNaN(factor) || factor <= 0) {
+        subdivisionFactorInput.style.borderColor = 'var(--error-color)';
+    } else {
+        subdivisionFactorInput.style.borderColor = 'var(--border-color)';
+    }
+});
+
+/* Preset Name Validation */
+presetNameInput.addEventListener('input', () => {
+    if (presetNameInput.value.trim() === '') {
+        presetNameInput.style.borderColor = 'var(--error-color)';
+    } else {
+        presetNameInput.style.borderColor = 'var(--border-color)';
     }
 });
