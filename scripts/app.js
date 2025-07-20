@@ -31,11 +31,68 @@ const popupContent = document.getElementById('popup-content');
    State Variables
 ========================= */
 let customSubdivisions = [];
-let presets = JSON.parse(localStorage.getItem('delay_presets')) || [];
+let presets = [];
 let tapTimes = [];
 let tapTimeout;
 const maxTaps = 8;
 let deferredPrompt;
+
+// Safe localStorage operations
+function loadPresets() {
+    try {
+        const stored = localStorage.getItem('delay_presets');
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed)) {
+                return parsed.filter(preset => 
+                    preset && 
+                    typeof preset.name === 'string' && 
+                    typeof preset.bpm === 'number' &&
+                    preset.bpm >= 30 && preset.bpm <= 300
+                ).slice(0, 50); // Limit to 50 presets
+            }
+        }
+    } catch (error) {
+        console.warn('Failed to load presets from localStorage:', error);
+    }
+    return [];
+}
+
+presets = loadPresets();
+
+/* =========================
+   Application State Manager
+========================= */
+class AppState {
+    constructor() {
+        this.currentBpm = null;
+        this.isCalculating = false;
+        this.lastCalculationTime = 0;
+    }
+    
+    updateBpm(bpm) {
+        if (bpm >= 30 && bpm <= 300) {
+            this.currentBpm = bpm;
+            return true;
+        }
+        return false;
+    }
+    
+    canCalculate() {
+        const now = performance.now();
+        const canCalc = !this.isCalculating && (now - this.lastCalculationTime > 100);
+        if (canCalc) {
+            this.lastCalculationTime = now;
+        }
+        return canCalc;
+    }
+    
+    setCalculating(calculating) {
+        this.isCalculating = calculating;
+    }
+}
+
+const appState = new AppState();
 
 /* =========================
    Initialization
@@ -43,6 +100,7 @@ let deferredPrompt;
 initializeTheme();
 initializePresets();
 initializePopup();
+initializeKeyboardNavigation();
 
 /* =========================
    Theme Management
@@ -88,16 +146,36 @@ function updateThemeIcon() {
    Delay Time Calculations
 ========================= */
 calculateBtn.addEventListener('click', handleCalculate);
+bpmInput.addEventListener('input', debouncedCalculate); // Auto-calculate on input
 
-function handleCalculate() {
-    const bpm = parseInt(bpmInput.value);
-    if (isNaN(bpm) || bpm <= 0) {
-        showNotification('Please enter a valid BPM.', 'error');
+const debouncedCalculate = debounce(function() {
+    if (!appState.canCalculate()) {
         return;
     }
-    const delayTimes = calculateDelayTimes(bpm);
-    populateSuggestions(delayTimes);
-    showNotification('Delay times calculated successfully!');
+    
+    appState.setCalculating(true);
+    const bpm = parseInt(bpmInput.value);
+    
+    if (!appState.updateBpm(bpm)) {
+        showNotification('Please enter a valid BPM between 30 and 300.', 'error');
+        appState.setCalculating(false);
+        return;
+    }
+    
+    try {
+        const delayTimes = calculateDelayTimes(bpm);
+        populateSuggestions(delayTimes);
+        showNotification('Delay times calculated successfully!');
+    } catch (error) {
+        console.error('Calculation error:', error);
+        showNotification('Error calculating delay times.', 'error');
+    } finally {
+        appState.setCalculating(false);
+    }
+}, 300);
+
+function handleCalculate() {
+    debouncedCalculate();
 }
 
 function calculateDelayTimes(bpm) {
@@ -112,28 +190,46 @@ function calculateDelayTimes(bpm) {
         'Thirty-Second Note (1/32)': 0.125,
 
         // Compound Subdivisions
-        'Dotted Half Note (3/4)': 3,
-        'Dotted Quarter Note (3/8)': 1.5,
-        'Dotted Eighth Note (3/16)': 0.75,
-        'Triplet Whole Note (2/3)': 2.6667,
-        'Triplet Half Note (2/3)': 1.3333,
-        'Triplet Quarter Note (2/3)': 0.6667,
-        'Triplet Eighth Note (2/3)': 0.3333,
-        'Triplet Sixteenth Note (2/3)': 0.1667
+        'Dotted Half Note': 3,
+        'Dotted Quarter Note': 1.5,
+        'Dotted Eighth Note': 0.75,
+        'Dotted Sixteenth Note': 0.375,
+        
+        // Corrected Triplet Subdivisions
+        'Triplet Whole Note': 4/3, // 1.3333
+        'Triplet Half Note': 2/3,  // 0.6667
+        'Triplet Quarter Note': 1/3, // 0.3333
+        'Triplet Eighth Note': 1/6,  // 0.1667
+        
+        // Quintuplet Subdivisions
+        'Quintuplet Quarter Note': 0.8,
+        'Quintuplet Eighth Note': 0.4,
+        
+        // Syncopated Subdivisions
+        'Swing Eighth Note': 2/3, // 0.6667
+        'Shuffle Feel': 0.6
     };
-    let allSubdivisions = { ...standardSubdivisions };
+    
+    // Merge with custom subdivisions
+    const allSubdivisions = { ...standardSubdivisions };
     customSubdivisions.forEach(sub => {
         allSubdivisions[sub.name] = sub.factor;
     });
+    
+    // Calculate delay times with proper rounding
     const delayTimes = {};
     for (const [subdivision, factor] of Object.entries(allSubdivisions)) {
-        delayTimes[subdivision] = beatDuration * factor;
+        const delay = beatDuration * factor;
+        delayTimes[subdivision] = Math.round(delay * 100) / 100; // Round to 2 decimal places
     }
+    
     return delayTimes;
 }
 
 function populateSuggestions(delayTimes) {
     suggestionsTable.innerHTML = '';
+    const bpm = parseInt(bpmInput.value);
+    
     const simpleSubdivisions = {
         'Whole Note (1/1)': 4,
         'Half Note (1/2)': 2,
@@ -142,15 +238,20 @@ function populateSuggestions(delayTimes) {
         'Sixteenth Note (1/16)': 0.25,
         'Thirty-Second Note (1/32)': 0.125
     };
+    
     const compoundSubdivisions = {
-        'Dotted Half Note (3/4)': 3,
-        'Dotted Quarter Note (3/8)': 1.5,
-        'Dotted Eighth Note (3/16)': 0.75,
-        'Triplet Whole Note (2/3)': 2.6667,
-        'Triplet Half Note (2/3)': 1.3333,
-        'Triplet Quarter Note (2/3)': 0.6667,
-        'Triplet Eighth Note (2/3)': 0.3333,
-        'Triplet Sixteenth Note (2/3)': 0.1667
+        'Dotted Half Note': 3,
+        'Dotted Quarter Note': 1.5,
+        'Dotted Eighth Note': 0.75,
+        'Dotted Sixteenth Note': 0.375,
+        'Triplet Whole Note': 4/3,
+        'Triplet Half Note': 2/3,
+        'Triplet Quarter Note': 1/3,
+        'Triplet Eighth Note': 1/6,
+        'Quintuplet Quarter Note': 0.8,
+        'Quintuplet Eighth Note': 0.4,
+        'Swing Eighth Note': 2/3,
+        'Shuffle Feel': 0.6
     };
 
     // Function to Add Rows
@@ -165,11 +266,11 @@ function populateSuggestions(delayTimes) {
             categoryCell.style.textAlign = 'center';
         }
         for (const [subdivision, factor] of Object.entries(subdivisions)) {
-            const ms = (60000 / bpmInput.value) * factor;
+            const ms = Math.round((60000 / bpm) * factor * 100) / 100; // Consistent rounding
             const row = suggestionsTable.insertRow();
-            row.classList.add('clickable-row'); // Add class for JavaScript
-            row.setAttribute('tabindex', '0'); // Make focusable
-            row.setAttribute('role', 'button'); // Role as button
+            row.classList.add('clickable-row');
+            row.setAttribute('tabindex', '0');
+            row.setAttribute('role', 'button');
             row.setAttribute('aria-label', `Copy delay time for ${subdivision}, ${ms.toFixed(2)} milliseconds`);
             const cellSubdivision = row.insertCell(0);
             const cellMs = row.insertCell(1);
@@ -185,18 +286,21 @@ function populateSuggestions(delayTimes) {
     addRows(compoundSubdivisions, 'Compound Subdivisions');
 
     // Add Custom Subdivisions
-    customSubdivisions.forEach(sub => {
-        const ms = (60000 / bpmInput.value) * sub.factor;
-        const row = suggestionsTable.insertRow();
-        row.classList.add('clickable-row'); // Add class for JavaScript
-        row.setAttribute('tabindex', '0'); // Make focusable
-        row.setAttribute('role', 'button'); // Role as button
-        row.setAttribute('aria-label', `Copy delay time for ${sub.name}, ${ms.toFixed(2)} milliseconds`);
-        const cellSubdivision = row.insertCell(0);
-        const cellMs = row.insertCell(1);
-        cellSubdivision.textContent = sub.name;
-        cellMs.textContent = ms.toFixed(2) + ' ms';
-    });
+    if (customSubdivisions.length > 0) {
+        addRows({}, 'Custom Subdivisions');
+        customSubdivisions.forEach(sub => {
+            const ms = Math.round((60000 / bpm) * sub.factor * 100) / 100;
+            const row = suggestionsTable.insertRow();
+            row.classList.add('clickable-row');
+            row.setAttribute('tabindex', '0');
+            row.setAttribute('role', 'button');
+            row.setAttribute('aria-label', `Copy delay time for ${sub.name}, ${ms.toFixed(2)} milliseconds`);
+            const cellSubdivision = row.insertCell(0);
+            const cellMs = row.insertCell(1);
+            cellSubdivision.textContent = sub.name;
+            cellMs.textContent = ms.toFixed(2) + ' ms';
+        });
+    }
 
     /* After populating the table, add event listeners to the new rows */
     addDelayRowEventListeners();
@@ -206,51 +310,97 @@ function populateSuggestions(delayTimes) {
    Copy to Clipboard Functionality
 ========================= */
 copyBtn.addEventListener('click', () => {
-    let textToCopy = 'Delay Time Suggestions:\n';
+    const bpm = parseInt(bpmInput.value);
+    if (isNaN(bpm) || bpm < 30 || bpm > 300) {
+        showNotification('Please calculate delay times first.', 'error');
+        return;
+    }
+    
+    let textToCopy = `Delay Time Suggestions for ${bpm} BPM:\n`;
     const rows = suggestionsTable.querySelectorAll('tr');
+    
     rows.forEach(row => {
         const cells = row.querySelectorAll('td');
         if (cells.length === 2) {
-            textToCopy += `${cells[0].textContent}: ${cells[1].textContent}\n`;
+            const subdivision = cells[0].textContent.trim();
+            const delay = cells[1].textContent.trim();
+            if (subdivision && delay) {
+                textToCopy += `${subdivision}: ${delay}\n`;
+            }
         }
     });
-    navigator.clipboard.writeText(textToCopy).then(() => {
-        showNotification('Delay times copied to clipboard!');
-    }).catch(() => {
-        showNotification('Failed to copy delay times.', 'error');
-    });
+    
+    textToCopy += `\nGenerated by quadra.calc at ${new Date().toLocaleString()}`;
+    
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+            showNotification('Delay times copied to clipboard!');
+        }).catch(() => {
+            fallbackCopyTextToClipboard(textToCopy);
+        });
+    } else {
+        fallbackCopyTextToClipboard(textToCopy);
+    }
 });
 
 /* =========================
    Tap Tempo Functionality
 ========================= */
 tapBtn.addEventListener('click', () => {
-    const now = Date.now();
+    const now = performance.now(); // High precision timing
     tapTimes.push(now);
+    
     if (tapTimes.length > maxTaps) {
         tapTimes.shift();
     }
+    
     if (tapTimeout) clearTimeout(tapTimeout);
+    
+    // Dynamic timeout based on current tempo or default
+    const currentBpm = parseInt(bpmInput.value) || 120;
+    const beatDuration = 60000 / currentBpm;
+    const timeoutDuration = Math.max(beatDuration * 3, 2000); // 3 beats or 2s minimum
+    
     tapTimeout = setTimeout(() => {
         tapTimes = [];
         tapFeedback.textContent = '';
         tapProgress.style.width = '0%';
-    }, 1500); // Reset taps if no tap within 1.5 seconds
+    }, timeoutDuration);
 
     if (tapTimes.length >= 2) {
         const intervals = [];
         for (let i = 1; i < tapTimes.length; i++) {
             intervals.push(tapTimes[i] - tapTimes[i - 1]);
         }
+        
+        // Filter outliers (remove intervals that are 50% outside the median)
+        if (intervals.length >= 3) {
+            const sortedIntervals = [...intervals].sort((a, b) => a - b);
+            const median = sortedIntervals[Math.floor(sortedIntervals.length / 2)];
+            const filteredIntervals = intervals.filter(interval => 
+                Math.abs(interval - median) < median * 0.5
+            );
+            if (filteredIntervals.length >= 2) {
+                intervals.splice(0, intervals.length, ...filteredIntervals);
+            }
+        }
+        
         const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
         const bpm = Math.round(60000 / avgInterval);
-        bpmInput.value = bpm;
-        tapFeedback.textContent = `BPM set to ${bpm}`;
-        const delayTimes = calculateDelayTimes(bpm);
-        populateSuggestions(delayTimes);
-        showNotification('BPM set via Tap Tempo!');
-        // Visual Indicator
-        const progress = Math.min((avgInterval / 2000) * 100, 100); // Max interval 2s
+        
+        // Validate BPM range
+        if (bpm >= 30 && bpm <= 300) {
+            bpmInput.value = bpm;
+            tapFeedback.textContent = `BPM: ${bpm} (${tapTimes.length} taps)`;
+            const delayTimes = calculateDelayTimes(bpm);
+            populateSuggestions(delayTimes);
+            showNotification('BPM set via Tap Tempo!');
+        } else {
+            tapFeedback.textContent = `Invalid BPM: ${bpm}. Keep tapping...`;
+        }
+        
+        // Improved visual indicator
+        const progress = Math.min((tapTimes.length / maxTaps) * 100, 100);
         tapProgress.style.width = progress + '%';
     } else {
         tapFeedback.textContent = 'Keep tapping...';
@@ -264,22 +414,44 @@ tapBtn.addEventListener('click', () => {
 addSubdivisionBtn.addEventListener('click', () => {
     const name = subdivisionNameInput.value.trim();
     const factor = parseFloat(subdivisionFactorInput.value);
-    if (name === '' || isNaN(factor) || factor <= 0) {
-        showNotification('Please enter a valid subdivision name and factor.', 'error');
+    
+    // Enhanced validation
+    if (name === '' || name.length > 50) {
+        showNotification('Please enter a valid subdivision name (1-50 characters).', 'error');
         return;
     }
+    if (isNaN(factor) || factor <= 0 || factor > 10) {
+        showNotification('Please enter a valid factor between 0.1 and 10.', 'error');
+        return;
+    }
+    
+    // Sanitize name input
+    const sanitizedName = name.replace(/[<>"'&]/g, '');
+    if (sanitizedName !== name) {
+        showNotification('Invalid characters removed from name.', 'error');
+        return;
+    }
+    
     // Check for duplicate names
-    if (customSubdivisions.some(sub => sub.name.toLowerCase() === name.toLowerCase())) {
+    if (customSubdivisions.some(sub => sub.name.toLowerCase() === sanitizedName.toLowerCase())) {
         showNotification('Subdivision name already exists.', 'error');
         return;
     }
-    customSubdivisions.push({ name, factor });
+    
+    // Limit number of custom subdivisions
+    if (customSubdivisions.length >= 20) {
+        showNotification('Maximum of 20 custom subdivisions allowed.', 'error');
+        return;
+    }
+    
+    customSubdivisions.push({ name: sanitizedName, factor });
     subdivisionNameInput.value = '';
     subdivisionFactorInput.value = '';
     updateCustomSubdivisionsTable();
+    
     if (bpmInput.value) {
         const bpm = parseInt(bpmInput.value);
-        if (!isNaN(bpm) && bpm > 0) {
+        if (!isNaN(bpm) && bpm >= 30 && bpm <= 300) {
             const delayTimes = calculateDelayTimes(bpm);
             populateSuggestions(delayTimes);
         }
@@ -303,15 +475,18 @@ function updateCustomSubdivisionsTable() {
         removeBtn.textContent = 'Remove';
         removeBtn.classList.add('action-button');
         removeBtn.setAttribute('aria-label', `Remove ${sub.name}`);
-        removeBtn.addEventListener('click', () => {
-            customSubdivisions.splice(index, 1);
-            updateCustomSubdivisionsTable();
-            const bpm = parseInt(bpmInput.value);
-            if (!isNaN(bpm) && bpm > 0) {
-                const delayTimes = calculateDelayTimes(bpm);
-                populateSuggestions(delayTimes);
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (confirm(`Remove subdivision "${sub.name}"?`)) {
+                customSubdivisions.splice(index, 1);
+                updateCustomSubdivisionsTable();
+                const bpm = parseInt(bpmInput.value);
+                if (!isNaN(bpm) && bpm >= 30 && bpm <= 300) {
+                    const delayTimes = calculateDelayTimes(bpm);
+                    populateSuggestions(delayTimes);
+                }
+                showNotification('Custom subdivision removed!');
             }
-            showNotification('Custom subdivision removed!');
         });
 
         cellAction.appendChild(removeBtn);
@@ -324,21 +499,54 @@ function updateCustomSubdivisionsTable() {
 savePresetBtn.addEventListener('click', () => {
     const name = presetNameInput.value.trim();
     const bpm = parseInt(bpmInput.value);
-    if (name === '' || isNaN(bpm) || bpm <= 0) {
-        showNotification('Please enter a valid preset name and BPM.', 'error');
+    
+    // Enhanced validation
+    if (name === '' || name.length > 30) {
+        showNotification('Please enter a valid preset name (1-30 characters).', 'error');
         return;
     }
+    if (isNaN(bpm) || bpm < 30 || bpm > 300) {
+        showNotification('Please enter a valid BPM between 30 and 300.', 'error');
+        return;
+    }
+    
+    // Sanitize name input
+    const sanitizedName = name.replace(/[<>"'&]/g, '');
+    if (sanitizedName !== name) {
+        showNotification('Invalid characters removed from preset name.', 'error');
+        return;
+    }
+    
     // Check for duplicate preset names
-    if (presets.some(preset => preset.name.toLowerCase() === name.toLowerCase())) {
+    if (presets.some(preset => preset.name.toLowerCase() === sanitizedName.toLowerCase())) {
         showNotification('Preset name already exists.', 'error');
         return;
     }
-    const preset = { name, bpm, customSubdivisions: [...customSubdivisions] };
+    
+    // Limit number of presets
+    if (presets.length >= 50) {
+        showNotification('Maximum of 50 presets allowed.', 'error');
+        return;
+    }
+    
+    const preset = { 
+        name: sanitizedName, 
+        bpm, 
+        customSubdivisions: JSON.parse(JSON.stringify(customSubdivisions)),
+        timestamp: Date.now()
+    };
+    
     presets.push(preset);
-    localStorage.setItem('delay_presets', JSON.stringify(presets));
-    presetNameInput.value = '';
-    updatePresetsTable();
-    showNotification('Preset saved successfully!');
+    
+    try {
+        localStorage.setItem('delay_presets', JSON.stringify(presets));
+        presetNameInput.value = '';
+        updatePresetsTable();
+        showNotification('Preset saved successfully!');
+    } catch (error) {
+        showNotification('Failed to save preset. Storage may be full.', 'error');
+        presets.pop(); // Remove the preset we just added
+    }
 });
 
 function updatePresetsTable() {
@@ -357,13 +565,34 @@ function updatePresetsTable() {
         loadBtn.textContent = 'Load';
         loadBtn.classList.add('action-button');
         loadBtn.setAttribute('aria-label', `Load preset ${preset.name}`);
-        loadBtn.addEventListener('click', () => {
-            bpmInput.value = preset.bpm;
-            customSubdivisions = JSON.parse(JSON.stringify(preset.customSubdivisions));
-            updateCustomSubdivisionsTable();
-            const delayTimes = calculateDelayTimes(preset.bpm);
-            populateSuggestions(delayTimes);
-            showNotification(`Preset "${preset.name}" loaded!`);
+        loadBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            try {
+                // Validate preset data
+                if (!preset.bpm || preset.bpm < 30 || preset.bpm > 300) {
+                    showNotification('Invalid BPM in preset.', 'error');
+                    return;
+                }
+                
+                bpmInput.value = preset.bpm;
+                
+                // Safely load custom subdivisions
+                if (Array.isArray(preset.customSubdivisions)) {
+                    customSubdivisions = preset.customSubdivisions.filter(sub => 
+                        sub && typeof sub.name === 'string' && typeof sub.factor === 'number' &&
+                        sub.factor > 0 && sub.factor <= 10
+                    );
+                } else {
+                    customSubdivisions = [];
+                }
+                
+                updateCustomSubdivisionsTable();
+                const delayTimes = calculateDelayTimes(preset.bpm);
+                populateSuggestions(delayTimes);
+                showNotification(`Preset "${preset.name}" loaded!`);
+            } catch (error) {
+                showNotification('Failed to load preset.', 'error');
+            }
         });
 
         // Delete Button
@@ -371,12 +600,17 @@ function updatePresetsTable() {
         deleteBtn.textContent = 'Delete';
         deleteBtn.classList.add('action-button');
         deleteBtn.setAttribute('aria-label', `Delete preset ${preset.name}`);
-        deleteBtn.addEventListener('click', () => {
+        deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
             if (confirm(`Are you sure you want to delete preset "${preset.name}"?`)) {
-                presets.splice(index, 1);
-                localStorage.setItem('delay_presets', JSON.stringify(presets));
-                updatePresetsTable();
-                showNotification('Preset deleted.');
+                try {
+                    presets.splice(index, 1);
+                    localStorage.setItem('delay_presets', JSON.stringify(presets));
+                    updatePresetsTable();
+                    showNotification('Preset deleted.');
+                } catch (error) {
+                    showNotification('Failed to delete preset.', 'error');
+                }
             }
         });
 
@@ -393,6 +627,17 @@ function updatePresetsTable() {
 
 function initializePresets() {
     updatePresetsTable();
+    
+    // Clean up localStorage if needed
+    try {
+        const usage = JSON.stringify(presets).length;
+        if (usage > 1000000) { // ~1MB limit
+            console.warn('Presets storage approaching limit');
+            showNotification('Storage approaching limit. Consider removing old presets.', 'error');
+        }
+    } catch (error) {
+        console.warn('Failed to check storage usage:', error);
+    }
 }
 
 /* =========================
@@ -406,18 +651,43 @@ function initializePopup() {
 
 /* Function to Show Delay Pop-up with Animation and Icon */
 function showDelayPopup(delayMs) {
-    popupContent.innerHTML = `
-        <svg xmlns="http://www.w3.org/2000/svg" class="popup-icon" viewBox="0 0 24 24" width="48" height="48" fill="green">
-            <path d="M20.285,6.708l-11.49,11.49l-5.659-5.659L5.596,13.024L8.565,16L19.7,4.865l-1.414-1.414Z"/>
-        </svg>
-        <span>${delayMs} ms</span>
-    `;
+    // Validate and sanitize input
+    const delay = parseFloat(delayMs);
+    if (isNaN(delay) || delay <= 0) {
+        return;
+    }
+    
+    // Create safe HTML content
+    const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    iconSvg.setAttribute('class', 'popup-icon');
+    iconSvg.setAttribute('viewBox', '0 0 24 24');
+    iconSvg.setAttribute('width', '48');
+    iconSvg.setAttribute('height', '48');
+    iconSvg.setAttribute('fill', 'green');
+    
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', 'M20.285,6.708l-11.49,11.49l-5.659-5.659L5.596,13.024L8.565,16L19.7,4.865l-1.414-1.414Z');
+    iconSvg.appendChild(path);
+    
+    const span = document.createElement('span');
+    span.textContent = `${delay.toFixed(2)} ms`;
+    
+    // Clear and populate popup content
+    popupContent.innerHTML = '';
+    popupContent.appendChild(iconSvg);
+    popupContent.appendChild(span);
+    
     delayPopup.classList.remove('hide');
     delayPopup.classList.add('show');
     delayPopup.setAttribute('aria-hidden', 'false');
-
-    // Ensure the pop-up is visible
     delayPopup.style.display = 'block';
+    
+    // Auto-hide after 2 seconds
+    setTimeout(() => {
+        if (delayPopup.classList.contains('show')) {
+            hideDelayPopup();
+        }
+    }, 2000);
 }
 
 /* Function to Hide Delay Pop-up with Animation */
@@ -436,13 +706,26 @@ function hideDelayPopup() {
 /* =========================
    Notification System
 ========================= */
-function showNotification(message, type = 'success') {
-    notification.textContent = message;
+let notificationTimeout;
+
+function showNotification(message, type = 'success', duration = 3000) {
+    // Clear any existing notification
+    if (notificationTimeout) {
+        clearTimeout(notificationTimeout);
+        notification.classList.remove('show');
+    }
+    
+    // Sanitize message
+    const sanitizedMessage = String(message).replace(/[<>"'&]/g, '');
+    
+    notification.textContent = sanitizedMessage;
     notification.style.backgroundColor = type === 'success' ? 'var(--success-color)' : 'var(--error-color)';
     notification.classList.add('show');
-    setTimeout(() => {
+    
+    notificationTimeout = setTimeout(() => {
         notification.classList.remove('show');
-    }, 3000);
+        notificationTimeout = null;
+    }, Math.max(1000, Math.min(10000, duration))); // Clamp between 1-10 seconds
 }
 
 /* =========================
@@ -465,22 +748,58 @@ function handleRowClick(row) {
     const delayMsText = row.cells[1].textContent;
     const delayMs = delayMsText.replace(' ms', '');
 
-    // Copy to Clipboard
-    navigator.clipboard.writeText(delayMs)
-        .then(() => {
-            showNotification(`Copied ${delayMs} ms to clipboard!`);
-            // Add temporary class for visual confirmation
-            row.classList.add('copied');
-            setTimeout(() => {
-                row.classList.remove('copied');
-            }, 1000); // Remove after 1 second
-        })
-        .catch(() => {
-            showNotification('Failed to copy delay time.', 'error');
-        });
+    // Validate the delay value before copying
+    const delayValue = parseFloat(delayMs);
+    if (isNaN(delayValue) || delayValue <= 0) {
+        showNotification('Invalid delay value.', 'error');
+        return;
+    }
+
+    // Copy to Clipboard with fallback
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(delayMs)
+            .then(() => {
+                showNotification(`Copied ${delayMs} ms to clipboard!`);
+                // Add temporary class for visual confirmation
+                row.classList.add('copied');
+                setTimeout(() => {
+                    row.classList.remove('copied');
+                }, 1000);
+            })
+            .catch(() => {
+                fallbackCopyTextToClipboard(delayMs);
+            });
+    } else {
+        fallbackCopyTextToClipboard(delayMs);
+    }
 
     // Show Pop-up Card
     showDelayPopup(delayMs);
+}
+
+/* Fallback clipboard function for older browsers */
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    textArea.style.position = 'fixed';
+    textArea.style.left = '-999999px';
+    textArea.style.top = '-999999px';
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (successful) {
+            showNotification(`Copied ${text} ms to clipboard!`);
+        } else {
+            showNotification('Failed to copy delay time.', 'error');
+        }
+    } catch (err) {
+        showNotification('Failed to copy delay time.', 'error');
+    } finally {
+        document.body.removeChild(textArea);
+    }
 }
 
 /* Debounced Handle Row Click */
@@ -503,6 +822,69 @@ function addDelayRowEventListeners() {
             }
         });
     });
+}
+
+/* =========================
+   Keyboard Navigation and Accessibility
+========================= */
+function initializeKeyboardNavigation() {
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        // Ctrl/Cmd + Enter to calculate
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            if (bpmInput.value) {
+                handleCalculate();
+            }
+        }
+        
+        // Space to tap tempo when focused on tap button
+        if (e.key === ' ' && document.activeElement === tapBtn) {
+            e.preventDefault();
+            tapBtn.click();
+        }
+        
+        // Escape to close modals
+        if (e.key === 'Escape') {
+            if (helpModal.style.display === 'block') {
+                helpModal.style.display = 'none';
+                helpModal.setAttribute('aria-hidden', 'true');
+            }
+            if (delayPopup.classList.contains('show')) {
+                hideDelayPopup();
+            }
+        }
+        
+        // T to focus tap button
+        if (e.key === 't' && !isInputFocused()) {
+            e.preventDefault();
+            tapBtn.focus();
+        }
+        
+        // B to focus BPM input
+        if (e.key === 'b' && !isInputFocused()) {
+            e.preventDefault();
+            bpmInput.focus();
+        }
+    });
+    
+    // Improve focus management
+    document.addEventListener('focusin', (e) => {
+        if (e.target.classList.contains('clickable-row')) {
+            e.target.setAttribute('aria-selected', 'true');
+        }
+    });
+    
+    document.addEventListener('focusout', (e) => {
+        if (e.target.classList.contains('clickable-row')) {
+            e.target.removeAttribute('aria-selected');
+        }
+    });
+}
+
+function isInputFocused() {
+    const activeElement = document.activeElement;
+    return activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
 }
 
 /* =========================

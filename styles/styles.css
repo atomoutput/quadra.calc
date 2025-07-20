@@ -201,33 +201,59 @@ body {
     color: var(--text-color);
 }
 
-/* Input Groups */
+/* Enhanced Input Groups */
 .input-group {
     display: flex;
     flex-direction: column;
     margin-bottom: 15px;
+    position: relative;
 }
 
 .input-group label {
     margin-bottom: 5px;
     font-size: 16px;
     color: var(--text-color);
+    font-weight: 500;
 }
 
 .input-group input {
     font-size: 16px;
     padding: 10px 12px;
-    border: 1px solid var(--border-color);
+    border: 2px solid var(--border-color);
     border-radius: 8px;
     background-color: var(--surface-color);
     color: var(--text-color);
-    transition: border-color 0.3s, background-color 0.3s;
+    transition: border-color 0.3s, background-color 0.3s, box-shadow 0.3s;
 }
 
 .input-group input:focus {
     border-color: var(--primary-color);
     outline: none;
     background-color: var(--background-color);
+    box-shadow: 0 0 0 3px rgba(106, 90, 205, 0.1);
+}
+
+.input-group input:invalid {
+    border-color: var(--error-color);
+}
+
+.input-group input.success {
+    border-color: var(--success-color);
+}
+
+/* Input validation feedback */
+.input-group .validation-message {
+    font-size: 14px;
+    margin-top: 4px;
+    min-height: 18px;
+}
+
+.input-group .validation-message.error {
+    color: var(--error-color);
+}
+
+.input-group .validation-message.success {
+    color: var(--success-color);
 }
 
 /* Buttons */
@@ -260,6 +286,33 @@ button:active {
 
 button:focus {
     outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+/* Loading state for buttons */
+button.loading {
+    opacity: 0.7;
+    cursor: not-allowed;
+    position: relative;
+}
+
+button.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
 button .icon {
@@ -290,6 +343,31 @@ th, td {
     color: var(--text-color);
 }
 
+/* Improve table accessibility */
+table {
+    border-collapse: separate;
+    border-spacing: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+th:first-child {
+    border-top-left-radius: 8px;
+}
+
+th:last-child {
+    border-top-right-radius: 8px;
+}
+
+tbody tr:last-child td:first-child {
+    border-bottom-left-radius: 8px;
+}
+
+tbody tr:last-child td:last-child {
+    border-bottom-right-radius: 8px;
+}
+
 th {
     background-color: var(--primary-color);
     color: var(--on-primary);
@@ -317,14 +395,33 @@ tr:hover {
     text-align: center; /* Center-align table cells */
 }
 
-/* Make Table Rows Clickable */
+/* Make Table Rows Clickable with Enhanced Accessibility */
 .delay-suggestions-card table tbody tr {
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.2s;
+    border-radius: 4px;
 }
 
 .delay-suggestions-card table tbody tr:hover {
-    background-color: rgba(30, 144, 255, 0.2); /* Slightly darker on hover */
+    background-color: rgba(30, 144, 255, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(30, 144, 255, 0.3);
+}
+
+.delay-suggestions-card table tbody tr:focus {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+    background-color: rgba(30, 144, 255, 0.25);
+}
+
+.delay-suggestions-card table tbody tr[aria-selected="true"] {
+    background-color: rgba(30, 144, 255, 0.3);
+    font-weight: 500;
+}
+
+.delay-suggestions-card table tbody tr:active {
+    transform: translateY(0);
+    background-color: rgba(30, 144, 255, 0.4);
 }
 
 /* Action Buttons within Tables */
@@ -347,21 +444,42 @@ tr:hover {
     background-color: #1C86EE; /* Dodger Blue Darker */
 }
 
-/* Tap Tempo Indicator */
+/* Enhanced Tap Tempo Indicator */
 .tap-indicator {
     width: 100%;
-    height: 8px;
+    height: 12px;
     background-color: var(--border-color);
-    border-radius: 4px;
+    border-radius: 6px;
     margin-top: 10px;
     overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+    position: relative;
 }
 
 .tap-progress {
     height: 100%;
     width: 0%;
-    background-color: var(--primary-color);
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
     transition: width 0.3s ease-in-out;
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+}
+
+.tap-progress::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
 }
 
 /* Tap Feedback */
@@ -515,10 +633,28 @@ tr:hover {
     }
 }
 
-/* Copied Row Styling */
+/* Copied Row Styling with Animation */
 .copied {
-    background-color: rgba(50, 205, 50, 0.3) !important; /* Lime Green with some transparency */
-    transition: background-color 0.3s ease;
+    background-color: rgba(50, 205, 50, 0.3) !important;
+    transform: scale(1.02) !important;
+    box-shadow: 0 0 10px rgba(50, 205, 50, 0.5) !important;
+    transition: all 0.3s ease;
+    animation: copyPulse 0.6s ease-out;
+}
+
+@keyframes copyPulse {
+    0% {
+        background-color: rgba(50, 205, 50, 0.6);
+        transform: scale(1.05);
+    }
+    50% {
+        background-color: rgba(50, 205, 50, 0.4);
+        transform: scale(1.02);
+    }
+    100% {
+        background-color: rgba(50, 205, 50, 0.3);
+        transform: scale(1.02);
+    }
 }
 
 /* Modal Styling */
@@ -596,10 +732,42 @@ tr:hover {
     color: var(--primary-light);
 }
 
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    :root {
+        --border-color: #000000;
+        --text-color: #000000;
+    }
+    
+    [data-theme="dark"] {
+        --border-color: #FFFFFF;
+        --text-color: #FFFFFF;
+        --background-color: #000000;
+        --surface-color: #1A1A1A;
+    }
+    
+    button {
+        border: 2px solid currentColor;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+    
+    .tap-progress::after {
+        animation: none;
+    }
+}
+
 /* Responsive Adjustments */
 @media (max-width: 1200px) {
     .tap-tempo-card {
-        grid-row: span 1; /* Adjust Tap Tempo card to span single row on medium screens */
+        grid-row: span 1;
     }
 }
 
