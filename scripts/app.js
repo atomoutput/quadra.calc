@@ -1,1509 +1,1209 @@
-/* Enhanced quadra.calc JavaScript - Modern UI/UX Implementation */
+/* quadra.calc v3.0 - Mobile-First JavaScript */
 
 /* =========================
    DOM Elements
 ========================= */
-const calculateBtn = document.getElementById('calculate-btn');
 const bpmInput = document.getElementById('bpm-input');
-const bpmDisplay = document.getElementById('bpm-display');
-const delayGrid = document.getElementById('delay-grid');
-const copyBtn = document.getElementById('copy-btn');
+const bpmDecreaseBtn = document.getElementById('bpm-decrease');
+const bpmIncreaseBtn = document.getElementById('bpm-increase');
+const bpmHalfBtn = document.getElementById('bpm-half');
+const bpmDoubleBtn = document.getElementById('bpm-double');
+const metronomeToggle = document.getElementById('metronome-toggle');
 const themeToggle = document.getElementById('theme-toggle');
-const themeIcon = document.getElementById('theme-icon');
+const midiSyncBtn = document.getElementById('midi-sync-btn');
+const midiStatus = document.getElementById('midi-status');
+
+// Tap Tempo (Main View)
 const tapBtn = document.getElementById('tap-btn');
-const tapFeedback = document.getElementById('tap-feedback');
-const tapProgress = document.getElementById('tap-progress');
-const tapRipple = document.getElementById('tap-ripple');
-const tapCount = document.getElementById('tap-count');
-const tapAccuracy = document.getElementById('tap-accuracy');
-const addSubdivisionBtn = document.getElementById('add-subdivision-btn');
+const tapBpmDisplay = document.getElementById('tap-bpm');
+const tapCountDisplay = document.getElementById('tap-count');
+const tapResetBtn = document.getElementById('tap-reset');
+const tapBpmInput = document.getElementById('tap-bpm-input');
+const tapBpmDown = document.getElementById('tap-bpm-down');
+const tapBpmUp = document.getElementById('tap-bpm-up');
+const metronomeTapToggle = document.getElementById('metronome-toggle-tap');
+const themeTapToggle = document.getElementById('theme-toggle-tap');
+
+// Tap Quick Results
+const tapQrQuarter = document.getElementById('tap-qr-quarter');
+const tapQrEighth = document.getElementById('tap-qr-eighth');
+const tapQrSixteenth = document.getElementById('tap-qr-sixteenth');
+const tapQrTriplet = document.getElementById('tap-qr-triplet');
+const tapQrDotted = document.getElementById('tap-qr-dotted');
+const tapQrWhole = document.getElementById('tap-qr-whole');
+const tapResultsContainer = document.querySelector('.tap-results');
+
+// Results
+const delayGrid = document.getElementById('delay-grid');
+const resultsBpmDisplay = document.getElementById('results-bpm');
+const displayModeSelect = document.getElementById('display-mode');
+const copyAllBtn = document.getElementById('copy-all-btn');
+const categoryFilters = document.getElementById('category-filters');
+
+// Quick Results
+const qrQuarter = document.getElementById('qr-quarter');
+const qrEighth = document.getElementById('qr-eighth');
+const qrSixteenth = document.getElementById('qr-sixteenth');
+const qrTriplet = document.getElementById('qr-triplet');
+
+// Settings
+const sampleRateOptions = document.getElementById('sample-rate-options');
+const displayModeOptions = document.getElementById('display-mode-options');
+const hapticToggle = document.getElementById('haptic-toggle');
 const subdivisionNameInput = document.getElementById('subdivision-name');
 const subdivisionFactorInput = document.getElementById('subdivision-factor');
+const addSubdivisionBtn = document.getElementById('add-subdivision-btn');
 const customSubdivisionsList = document.getElementById('custom-subdivisions-list');
-const savePresetBtn = document.getElementById('save-preset-btn');
 const presetNameInput = document.getElementById('preset-name');
+const savePresetBtn = document.getElementById('save-preset-btn');
 const presetsList = document.getElementById('presets-list');
+const shareBtn = document.getElementById('share-btn');
+const exportBtn = document.getElementById('export-btn');
+
+// Navigation & UI
+const bottomNav = document.getElementById('bottom-nav');
 const notification = document.getElementById('notification');
-const installBtn = document.getElementById('install-btn');
-const helpBtn = document.getElementById('help-btn');
-const helpModal = document.getElementById('help-modal');
-const closeHelpModal = document.getElementById('close-help-modal');
 const delayPopup = document.getElementById('delay-popup');
 const popupContent = document.getElementById('popup-content');
-const resultsSection = document.getElementById('results-section');
-const advancedToggle = document.getElementById('advanced-toggle');
-const advancedContent = document.getElementById('advanced-content');
-
-// Beat visualization elements
+const historyList = document.getElementById('history-list');
 const beatDots = ['beat-1', 'beat-2', 'beat-3', 'beat-4'].map(id => document.getElementById(id));
 
-// Legacy table elements for compatibility
-const suggestionsTable = document.getElementById('suggestions-table');
-const customSubdivisionsTable = document.getElementById('custom-subdivisions-table');
-const presetsTable = document.getElementById('presets-table');
-
 /* =========================
-   Application State Manager
+   Application State
 ========================= */
-class AppState {
-    constructor() {
-        this.currentBpm = null;
-        this.isCalculating = false;
-        this.lastCalculationTime = 0;
-        this.beatIndex = 0;
-        this.isAdvancedOpen = false;
-    }
-    
-    updateBpm(bpm) {
-        if (bpm >= 30 && bpm <= 300) {
-            this.currentBpm = bpm;
-            this.updateBpmDisplay(bpm);
-            return true;
-        }
-        return false;
-    }
-    
-    updateBpmDisplay(bpm) {
-        if (bpmDisplay) {
-            bpmDisplay.textContent = bpm || '---';
-            bpmDisplay.classList.add('updating');
-            setTimeout(() => bpmDisplay.classList.remove('updating'), 300);
-        }
-    }
-    
-    canCalculate() {
-        const now = performance.now();
-        const canCalc = !this.isCalculating && (now - this.lastCalculationTime > 100);
-        if (canCalc) {
-            this.lastCalculationTime = now;
-        }
-        return canCalc;
-    }
-    
-    setCalculating(calculating) {
-        this.isCalculating = calculating;
-        if (calculateBtn) {
-            calculateBtn.classList.toggle('loading', calculating);
-        }
-    }
-    
-    updateBeatVisualization() {
-        beatDots.forEach((dot, index) => {
-            if (dot) {
-                dot.classList.toggle('active', index === this.beatIndex);
-            }
-        });
-        this.beatIndex = (this.beatIndex + 1) % 4;
-    }
-    
-    resetBeatVisualization() {
-        this.beatIndex = 0;
-        beatDots.forEach(dot => {
-            if (dot) dot.classList.remove('active');
-        });
-    }
-}
+const appState = {
+    currentBpm: 120,
+    currentView: 'tap',  // Tap is now the main/default view
+    sampleRate: 44100,
+    displayMode: 'ms',
+    hapticEnabled: true,
+    history: [],
+    metronomeActive: false,
+    activeCategory: 'all',
+    beatIndex: 0
+};
 
-const appState = new AppState();
-
-/* =========================
-   State Variables
-========================= */
-let customSubdivisions = [];
-let presets = [];
-let tapTimes = [];
-let tapTimeout;
-let beatVisualizationInterval;
-const maxTaps = 8;
-let deferredPrompt;
-
-// Safe localStorage operations
-function loadPresets() {
-    try {
-        const stored = localStorage.getItem('delay_presets');
-        if (stored) {
-            const parsed = JSON.parse(stored);
-            if (Array.isArray(parsed)) {
-                return parsed.filter(preset => 
-                    preset && 
-                    typeof preset.name === 'string' && 
-                    typeof preset.bpm === 'number' &&
-                    preset.bpm >= 30 && preset.bpm <= 300
-                ).slice(0, 50);
-            }
-        }
-    } catch (error) {
-        console.warn('Failed to load presets from localStorage:', error);
+// Load saved state
+try {
+    const saved = localStorage.getItem('quadra_state');
+    if (saved) {
+        const parsed = JSON.parse(saved);
+        Object.assign(appState, parsed);
     }
-    return [];
-}
-
-presets = loadPresets();
-
-/* =========================
-   Initialization
-========================= */
-initializeTheme();
-initializePresets();
-initializePopup();
-initializeKeyboardNavigation();
-initializeAdvancedSection();
-addTapResetButton();
-
-/* =========================
-   Theme Management
-========================= */
-function initializeTheme() {
-    const savedTheme = localStorage.getItem('theme');
-    const userPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = savedTheme || (userPrefersDark ? 'dark' : 'light');
-    document.body.setAttribute('data-theme', initialTheme);
-    updateThemeIcon();
-
-    if (themeToggle) {
-        themeToggle.addEventListener('click', toggleTheme);
-    }
-}
-
-function toggleTheme() {
-    const currentTheme = document.body.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    document.body.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    updateThemeIcon();
-}
-
-function updateThemeIcon() {
-    if (!themeIcon) return;
-    
-    const currentTheme = document.body.getAttribute('data-theme');
-    if (currentTheme === 'dark') {
-        themeIcon.innerHTML = `<path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z" fill="currentColor"/>`;
-    } else {
-        themeIcon.innerHTML = `<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/>`;
-    }
-}
-
-/* =========================
-   Enhanced Delay Time Calculations
-========================= */
-const debouncedCalculate = debounce(function() {
-    if (!appState.canCalculate()) {
-        return;
-    }
-    
-    appState.setCalculating(true);
-    const bpm = parseInt(bpmInput.value);
-    
-    if (!appState.updateBpm(bpm)) {
-        showNotification('Please enter a valid BPM between 30 and 300.', 'error');
-        appState.setCalculating(false);
-        return;
-    }
-    
-    try {
-        const delayTimes = calculateDelayTimes(bpm);
-        populateDelayCards(delayTimes);
-        showResultsSection();
-        showNotification('Delay times calculated successfully!', 'success');
-    } catch (error) {
-        console.error('Calculation error:', error);
-        showNotification('Error calculating delay times.', 'error');
-    } finally {
-        appState.setCalculating(false);
-    }
-}, 300);
-
-function handleCalculate() {
-    debouncedCalculate();
-}
-
-function calculateDelayTimes(bpm) {
-    const beatDuration = 60000 / bpm;
-    const standardSubdivisions = {
-        // Simple Subdivisions
-        'Whole Note (1/1)': { factor: 4, category: 'Simple', note: '4 beats' },
-        'Half Note (1/2)': { factor: 2, category: 'Simple', note: '2 beats' },
-        'Quarter Note (1/4)': { factor: 1, category: 'Simple', note: '1 beat' },
-        'Eighth Note (1/8)': { factor: 0.5, category: 'Simple', note: '1/2 beat' },
-        'Sixteenth Note (1/16)': { factor: 0.25, category: 'Simple', note: '1/4 beat' },
-        'Thirty-Second Note (1/32)': { factor: 0.125, category: 'Simple', note: '1/8 beat' },
-
-        // Compound Subdivisions
-        'Dotted Half Note': { factor: 3, category: 'Dotted', note: '3 beats' },
-        'Dotted Quarter Note': { factor: 1.5, category: 'Dotted', note: '1.5 beats' },
-        'Dotted Eighth Note': { factor: 0.75, category: 'Dotted', note: '0.75 beats' },
-        'Dotted Sixteenth Note': { factor: 0.375, category: 'Dotted', note: '0.375 beats' },
-        
-        // Corrected Triplet Subdivisions
-        'Triplet Whole Note': { factor: 4/3, category: 'Triplet', note: '1.33 beats' },
-        'Triplet Half Note': { factor: 2/3, category: 'Triplet', note: '0.67 beats' },
-        'Triplet Quarter Note': { factor: 1/3, category: 'Triplet', note: '0.33 beats' },
-        'Triplet Eighth Note': { factor: 1/6, category: 'Triplet', note: '0.17 beats' },
-        
-        // Quintuplet Subdivisions
-        'Quintuplet Quarter Note': { factor: 0.8, category: 'Quintuplet', note: '0.8 beats' },
-        'Quintuplet Eighth Note': { factor: 0.4, category: 'Quintuplet', note: '0.4 beats' },
-        
-        // Syncopated Subdivisions
-        'Swing Eighth Note': { factor: 2/3, category: 'Swing', note: 'Swing feel' },
-        'Shuffle Feel': { factor: 0.6, category: 'Swing', note: 'Shuffle groove' }
-    };
-    
-    // Merge with custom subdivisions
-    const allSubdivisions = { ...standardSubdivisions };
-    customSubdivisions.forEach(sub => {
-        allSubdivisions[sub.name] = { 
-            factor: sub.factor, 
-            category: 'Custom', 
-            note: `${sub.factor}x quarter` 
-        };
-    });
-    
-    // Calculate delay times with proper rounding
-    const delayTimes = {};
-    for (const [subdivision, data] of Object.entries(allSubdivisions)) {
-        const delay = beatDuration * data.factor;
-        delayTimes[subdivision] = {
-            ms: Math.round(delay * 100) / 100,
-            category: data.category,
-            note: data.note
-        };
-    }
-    
-    return delayTimes;
-}
-
-function populateDelayCards(delayTimes) {
-    if (!delayGrid) return;
-    
-    delayGrid.innerHTML = '';
-    
-    // Group subdivisions by category
-    const categories = ['Simple', 'Dotted', 'Triplet', 'Quintuplet', 'Swing', 'Custom'];
-    
-    categories.forEach(category => {
-        const categoryItems = Object.entries(delayTimes).filter(([, data]) => data.category === category);
-        
-        if (categoryItems.length === 0) return;
-        
-        categoryItems.forEach(([subdivision, data]) => {
-            const card = createDelayCard(subdivision, data);
-            delayGrid.appendChild(card);
-        });
-    });
-    
-    // Add click listeners to delay cards
-    addDelayCardEventListeners();
-}
-
-function createDelayCard(subdivision, data) {
-    const card = document.createElement('div');
-    card.className = 'delay-card';
-    card.setAttribute('tabindex', '0');
-    card.setAttribute('role', 'button');
-    card.setAttribute('aria-label', `Copy delay time for ${subdivision}, ${data.ms.toFixed(2)} milliseconds`);
-    
-    card.innerHTML = `
-        <div class="delay-card-header">
-            <div class="delay-subdivision">${subdivision}</div>
-            <div class="delay-category">${data.category}</div>
-        </div>
-        <div class="delay-time">${data.ms.toFixed(2)} ms</div>
-        <div class="delay-note">
-            <svg class="delay-note-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-            </svg>
-            ${data.note}
-        </div>
-    `;
-    
-    return card;
-}
-
-function showResultsSection() {
-    if (resultsSection) {
-        resultsSection.style.display = 'block';
-        resultsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-}
-
-/* =========================
-   Enhanced Tap Tempo Functionality
-========================= */
-if (tapBtn) {
-    tapBtn.addEventListener('click', handleTapTempo);
-    
-    // Add visual feedback for tap timing
-    tapBtn.addEventListener('mousedown', () => {
-        tapBtn.style.transform = 'scale(0.95)';
-    });
-    
-    tapBtn.addEventListener('mouseup', () => {
-        tapBtn.style.transform = '';
-    });
-    
-    tapBtn.addEventListener('mouseleave', () => {
-        tapBtn.style.transform = '';
-    });
-}
-
-function handleTapTempo() {
-    const now = performance.now();
-    tapTimes.push(now);
-    
-    // Visual feedback
-    triggerTapRipple();
-    appState.updateBeatVisualization();
-    
-    if (tapTimes.length > maxTaps) {
-        tapTimes.shift();
-    }
-    
-    if (tapTimeout) clearTimeout(tapTimeout);
-    
-    // Fixed timeout - wait 2 seconds after last tap to finalize
-    const timeoutDuration = 2000; // Always 2 seconds
-    
-    tapTimeout = setTimeout(() => {
-        finalizeTapTempo();
-    }, timeoutDuration);
-
-    // Only update feedback, don't calculate final BPM yet
-    updateTapFeedback();
-}
-
-// New function to handle the final calculation when tapping stops
-function finalizeTapTempo() {
-    if (tapTimes.length >= 2) {
-        // Update UI to show we're calculating
-        if (tapFeedback) {
-            tapFeedback.textContent = 'Calculating final BPM...';
-            tapFeedback.classList.remove('tapping');
-            tapFeedback.classList.add('calculating');
-        }
-        
-        if (tapBtn) {
-            tapBtn.classList.remove('tapping');
-        }
-        
-        const finalBpm = calculateTapTempo();
-        if (finalBpm && finalBpm >= 30 && finalBpm <= 300) {
-            // Update UI to show completion
-            if (tapFeedback) {
-                tapFeedback.textContent = `Final BPM: ${finalBpm}`;
-                tapFeedback.classList.remove('calculating');
-                tapFeedback.classList.add('completed');
-            }
-            
-            if (tapBtn) {
-                tapBtn.classList.add('completed');
-            }
-            
-            showNotification(`Tap tempo complete: ${finalBpm} BPM from ${tapTimes.length} taps`, 'success');
-            
-            // Auto-calculate delay times after a brief pause
-            setTimeout(() => {
-                debouncedCalculate();
-            }, 800);
-            
-        } else {
-            showNotification('Unable to calculate BPM from taps', 'error');
-            resetTapTempo();
-        }
-    } else {
-        showNotification('Need at least 2 taps to calculate BPM', 'error');
-        resetTapTempo();
-    }
-}
-
-function triggerTapRipple() {
-    if (tapRipple) {
-        tapRipple.classList.remove('active');
-        setTimeout(() => tapRipple.classList.add('active'), 10);
-        setTimeout(() => tapRipple.classList.remove('active'), 600);
-    }
-}
-
-function calculateTapTempo() {
-    if (tapTimes.length < 2) {
-        return null;
-    }
-    
-    // Calculate intervals between taps (in milliseconds)
-    const intervals = [];
-    for (let i = 1; i < tapTimes.length; i++) {
-        intervals.push(tapTimes[i] - tapTimes[i - 1]);
-    }
-    
-    console.log('Raw intervals (ms):', intervals);
-    
-    // Filter outliers if we have enough data
-    let filteredIntervals = intervals;
-    if (intervals.length >= 3) {
-        const sortedIntervals = [...intervals].sort((a, b) => a - b);
-        const median = sortedIntervals[Math.floor(sortedIntervals.length / 2)];
-        
-        // Remove intervals that are more than 50% away from median
-        filteredIntervals = intervals.filter(interval => 
-            Math.abs(interval - median) <= median * 0.5
-        );
-        
-        // If we filtered out too many, use original
-        if (filteredIntervals.length < 2) {
-            filteredIntervals = intervals;
-        }
-        
-        console.log('Filtered intervals (ms):', filteredIntervals);
-        console.log('Median interval (ms):', median);
-    }
-    
-    // Calculate average interval
-    const avgInterval = filteredIntervals.reduce((a, b) => a + b, 0) / filteredIntervals.length;
-    console.log('Average interval (ms):', avgInterval);
-    
-    // Convert to BPM: 60000ms per minute / interval in ms = BPM
-    const bpm = Math.round(60000 / avgInterval);
-    console.log('Calculated BPM:', bpm);
-    
-    // Calculate accuracy (timing consistency)
-    // Method: Calculate how much each interval deviates from the average
-    const variance = filteredIntervals.reduce((sum, interval) => 
-        sum + Math.pow(interval - avgInterval, 2), 0) / filteredIntervals.length;
-    const standardDeviation = Math.sqrt(variance);
-    
-    // Convert to percentage: lower deviation = higher accuracy
-    // If all intervals are exactly the same, accuracy = 100%
-    // If intervals vary wildly, accuracy approaches 0%
-    const coefficientOfVariation = (standardDeviation / avgInterval) * 100;
-    const accuracy = Math.max(0, Math.min(100, 100 - coefficientOfVariation));
-    
-    console.log('Standard deviation (ms):', standardDeviation.toFixed(2));
-    console.log('Coefficient of variation (%):', coefficientOfVariation.toFixed(2));
-    
-    console.log('Timing accuracy:', accuracy.toFixed(1) + '%');
-    
-    // Update UI
-    if (bpm >= 30 && bpm <= 300) {
-        if (bpmInput) bpmInput.value = bpm;
-        appState.updateBpm(bpm);
-        
-        if (tapAccuracy) {
-            tapAccuracy.textContent = `${accuracy.toFixed(0)}% accurate`;
-        }
-        
-        startBeatVisualization(bpm);
-        return bpm;
-    } else {
-        console.warn('BPM out of range:', bpm);
-        return null;
-    }
-}
-
-function updateTapFeedback() {
-    if (tapFeedback) {
-        // Remove all state classes
-        tapFeedback.classList.remove('tapping', 'calculating', 'completed');
-        
-        if (tapTimes.length === 0) {
-            tapFeedback.textContent = 'Tap to start';
-            if (tapBtn) tapBtn.classList.remove('tapping', 'completed');
-        } else if (tapTimes.length === 1) {
-            tapFeedback.textContent = 'Keep tapping...';
-            tapFeedback.classList.add('tapping');
-            if (tapBtn) {
-                tapBtn.classList.add('tapping');
-                tapBtn.classList.remove('completed');
-            }
-        } else if (tapTimes.length >= 2) {
-            // Show live estimate, but don't finalize
-            const lastTwoInterval = tapTimes[tapTimes.length - 1] - tapTimes[tapTimes.length - 2];
-            const estimatedBpm = Math.round(60000 / lastTwoInterval);
-            
-            tapFeedback.classList.add('tapping');
-            if (tapBtn) {
-                tapBtn.classList.add('tapping');
-                tapBtn.classList.remove('completed');
-            }
-            
-            // Only show estimate if it's reasonable
-            if (estimatedBpm >= 30 && estimatedBpm <= 300) {
-                tapFeedback.textContent = `~${estimatedBpm} BPM (release in 2s)`;
-            } else {
-                tapFeedback.textContent = 'Keep tapping in rhythm...';
-            }
-        }
-    }
-    
-    if (tapCount) {
-        tapCount.textContent = `${tapTimes.length} taps`;
-    }
-    
-    // Update progress bar
-    if (tapProgress) {
-        const progress = Math.min((tapTimes.length / maxTaps) * 100, 100);
-        tapProgress.style.width = progress + '%';
-    }
-    
-    // Clear accuracy while tapping
-    if (tapAccuracy && tapTimes.length > 0) {
-        tapAccuracy.textContent = 'Will calculate when done...';
-    }
-}
-
-function resetTapTempo() {
-    tapTimes = [];
-    appState.resetBeatVisualization();
-    
-    if (tapFeedback) {
-        tapFeedback.textContent = 'Tap to start';
-        tapFeedback.classList.remove('tapping', 'calculating', 'completed');
-    }
-    if (tapCount) tapCount.textContent = '0 taps';
-    if (tapAccuracy) tapAccuracy.textContent = '';
-    if (tapProgress) tapProgress.style.width = '0%';
-    
-    if (tapBtn) {
-        tapBtn.classList.remove('tapping', 'completed');
-    }
-    
-    stopBeatVisualization();
-    
-    console.log('Tap tempo reset');
-}
-
-// Add manual reset button functionality
-function addTapResetButton() {
-    if (tapBtn) {
-        // Add double-click to reset (prevent during normal tapping)
-        let lastClickTime = 0;
-        
-        tapBtn.addEventListener('dblclick', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            // Only allow reset if we haven't tapped in the last 3 seconds
-            const now = performance.now();
-            const timeSinceLastTap = tapTimes.length > 0 ? now - tapTimes[tapTimes.length - 1] : Infinity;
-            
-            if (timeSinceLastTap > 3000 || tapTimes.length === 0) {
-                resetTapTempo();
-                showNotification('Tap tempo reset (double-click)', 'success');
-            } else {
-                showNotification('Wait 3 seconds after tapping to reset', 'error');
-            }
-        });
-        
-        // Add long press to reset (mobile-friendly)
-        let pressTimer;
-        tapBtn.addEventListener('pointerdown', (e) => {
-            pressTimer = setTimeout(() => {
-                if (tapTimes.length > 0) {
-                    resetTapTempo();
-                    showNotification('Tap tempo reset (long press)', 'success');
-                    e.preventDefault();
-                }
-            }, 1500); // 1.5 second long press
-        });
-        
-        tapBtn.addEventListener('pointerup', () => {
-            if (pressTimer) {
-                clearTimeout(pressTimer);
-            }
-        });
-        
-        tapBtn.addEventListener('pointerleave', () => {
-            if (pressTimer) {
-                clearTimeout(pressTimer);
-            }
-        });
-    }
-}
-
-function startBeatVisualization(bpm) {
-    stopBeatVisualization();
-    const beatInterval = 60000 / bpm;
-    beatVisualizationInterval = setInterval(() => {
-        appState.updateBeatVisualization();
-    }, beatInterval);
-}
-
-function stopBeatVisualization() {
-    if (beatVisualizationInterval) {
-        clearInterval(beatVisualizationInterval);
-        beatVisualizationInterval = null;
-    }
-}
-
-/* =========================
-   Enhanced Clipboard and Interaction
-========================= */
-function addDelayCardEventListeners() {
-    const delayCards = document.querySelectorAll('.delay-card');
-    delayCards.forEach(card => {
-        card.addEventListener('click', () => handleDelayCardClick(card));
-        card.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                handleDelayCardClick(card);
-            }
-        });
-    });
-}
-
-function handleDelayCardClick(card) {
-    const delayTimeElement = card.querySelector('.delay-time');
-    if (!delayTimeElement) return;
-    
-    const delayText = delayTimeElement.textContent;
-    const delayMs = delayText.replace(' ms', '');
-    const subdivision = card.querySelector('.delay-subdivision').textContent;
-    
-    // Validate the delay value
-    const delayValue = parseFloat(delayMs);
-    if (isNaN(delayValue) || delayValue <= 0) {
-        showNotification('Invalid delay value.', 'error');
-        return;
-    }
-
-    // Copy to clipboard
-    copyToClipboard(delayMs, () => {
-        showNotification(`Copied ${delayMs} ms to clipboard!`, 'success');
-        
-        // Visual feedback
-        card.classList.add('copied');
-        setTimeout(() => card.classList.remove('copied'), 1000);
-        
-        // Show popup
-        showDelayPopup(delayMs);
-    });
-}
-
-function copyToClipboard(text, callback) {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text)
-            .then(callback)
-            .catch(() => fallbackCopyTextToClipboard(text, callback));
-    } else {
-        fallbackCopyTextToClipboard(text, callback);
-    }
-}
-
-function fallbackCopyTextToClipboard(text, callback) {
-    const textArea = document.createElement('textarea');
-    textArea.value = text;
-    textArea.style.position = 'fixed';
-    textArea.style.left = '-999999px';
-    textArea.style.top = '-999999px';
-    document.body.appendChild(textArea);
-    textArea.focus();
-    textArea.select();
-    
-    try {
-        const successful = document.execCommand('copy');
-        if (successful && callback) {
-            callback();
-        } else {
-            showNotification('Failed to copy delay time.', 'error');
-        }
-    } catch (err) {
-        showNotification('Failed to copy delay time.', 'error');
-    } finally {
-        document.body.removeChild(textArea);
-    }
-}
-
-// Copy all delay times
-if (copyBtn) {
-    copyBtn.addEventListener('click', () => {
-        const bpm = parseInt(bpmInput.value);
-        if (isNaN(bpm) || bpm < 30 || bpm > 300) {
-            showNotification('Please calculate delay times first.', 'error');
-            return;
-        }
-        
-        let textToCopy = `Delay Time Suggestions for ${bpm} BPM:\\n\\n`;
-        const delayCards = document.querySelectorAll('.delay-card');
-        
-        delayCards.forEach(card => {
-            const subdivision = card.querySelector('.delay-subdivision').textContent;
-            const delay = card.querySelector('.delay-time').textContent;
-            if (subdivision && delay) {
-                textToCopy += `${subdivision}: ${delay}\\n`;
-            }
-        });
-        
-        textToCopy += `\\nGenerated by quadra.calc at ${new Date().toLocaleString()}`;
-        
-        copyToClipboard(textToCopy, () => {
-            showNotification('All delay times copied to clipboard!', 'success');
-        });
-    });
-}
-
-/* =========================
-   Advanced Features Section
-========================= */
-function initializeAdvancedSection() {
-    if (advancedToggle) {
-        advancedToggle.addEventListener('click', toggleAdvancedSection);
-    }
-}
-
-function toggleAdvancedSection() {
-    if (!advancedContent || !advancedToggle) return;
-    
-    const isOpen = appState.isAdvancedOpen;
-    appState.isAdvancedOpen = !isOpen;
-    
-    advancedToggle.setAttribute('aria-expanded', appState.isAdvancedOpen.toString());
-    
-    if (appState.isAdvancedOpen) {
-        advancedContent.style.display = 'block';
-        setTimeout(() => {
-            advancedContent.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
-    } else {
-        advancedContent.style.display = 'none';
-    }
-}
-
-/* =========================
-   Enhanced Custom Subdivisions Management
-========================= */
-if (addSubdivisionBtn) {
-    addSubdivisionBtn.addEventListener('click', handleAddSubdivision);
-}
-
-function handleAddSubdivision() {
-    const name = subdivisionNameInput?.value.trim();
-    const factor = parseFloat(subdivisionFactorInput?.value);
-    
-    // Enhanced validation
-    if (!name || name.length > 50) {
-        showNotification('Please enter a valid subdivision name (1-50 characters).', 'error');
-        return;
-    }
-    if (isNaN(factor) || factor <= 0 || factor > 10) {
-        showNotification('Please enter a valid factor between 0.1 and 10.', 'error');
-        return;
-    }
-    
-    // Sanitize name input
-    const sanitizedName = name.replace(/[<>\"'&]/g, '');
-    if (sanitizedName !== name) {
-        showNotification('Invalid characters removed from name.', 'error');
-        return;
-    }
-    
-    // Check for duplicate names
-    if (customSubdivisions.some(sub => sub.name.toLowerCase() === sanitizedName.toLowerCase())) {
-        showNotification('Subdivision name already exists.', 'error');
-        return;
-    }
-    
-    // Limit number of custom subdivisions
-    if (customSubdivisions.length >= 20) {
-        showNotification('Maximum of 20 custom subdivisions allowed.', 'error');
-        return;
-    }
-    
-    customSubdivisions.push({ name: sanitizedName, factor });
-    if (subdivisionNameInput) subdivisionNameInput.value = '';
-    if (subdivisionFactorInput) subdivisionFactorInput.value = '';
-    
-    updateCustomSubdivisionsList();
-    
-    // Auto-recalculate if we have a BPM
-    if (appState.currentBpm) {
-        debouncedCalculate();
-    }
-    
-    showNotification('Custom subdivision added!', 'success');
-}
-
-function updateCustomSubdivisionsList() {
-    if (!customSubdivisionsList) return;
-    
-    customSubdivisionsList.innerHTML = '';
-    
-    customSubdivisions.forEach((sub, index) => {
-        const item = document.createElement('div');
-        item.className = 'list-item';
-        
-        item.innerHTML = `
-            <div class="list-item-content">
-                <div class="list-item-name">${sub.name}</div>
-                <div class="list-item-detail">Factor: ${sub.factor}</div>
-            </div>
-            <div class="list-item-actions">
-                <button class="btn-icon danger" aria-label="Remove ${sub.name}" data-index="${index}">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                    </svg>
-                </button>
-            </div>
-        `;
-        
-        // Add remove button listener
-        const removeBtn = item.querySelector('.btn-icon');
-        removeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (confirm(`Remove subdivision "${sub.name}"?`)) {
-                customSubdivisions.splice(index, 1);
-                updateCustomSubdivisionsList();
-                if (appState.currentBpm) {
-                    debouncedCalculate();
-                }
-                showNotification('Custom subdivision removed!', 'success');
-            }
-        });
-        
-        customSubdivisionsList.appendChild(item);
-    });
-}
-
-/* =========================
-   Enhanced Presets Management
-========================= */
-if (savePresetBtn) {
-    savePresetBtn.addEventListener('click', handleSavePreset);
-}
-
-function handleSavePreset() {
-    const name = presetNameInput?.value.trim();
-    const bpm = parseInt(bpmInput?.value);
-    
-    // Enhanced validation
-    if (!name || name.length > 30) {
-        showNotification('Please enter a valid preset name (1-30 characters).', 'error');
-        return;
-    }
-    if (isNaN(bpm) || bpm < 30 || bpm > 300) {
-        showNotification('Please enter a valid BPM between 30 and 300.', 'error');
-        return;
-    }
-    
-    // Sanitize name input
-    const sanitizedName = name.replace(/[<>\"'&]/g, '');
-    if (sanitizedName !== name) {
-        showNotification('Invalid characters removed from preset name.', 'error');
-        return;
-    }
-    
-    // Check for duplicate preset names
-    if (presets.some(preset => preset.name.toLowerCase() === sanitizedName.toLowerCase())) {
-        showNotification('Preset name already exists.', 'error');
-        return;
-    }
-    
-    // Limit number of presets
-    if (presets.length >= 50) {
-        showNotification('Maximum of 50 presets allowed.', 'error');
-        return;
-    }
-    
-    const preset = { 
-        name: sanitizedName, 
-        bpm, 
-        customSubdivisions: JSON.parse(JSON.stringify(customSubdivisions)),
-        timestamp: Date.now()
-    };
-    
-    presets.push(preset);
-    
-    try {
-        localStorage.setItem('delay_presets', JSON.stringify(presets));
-        if (presetNameInput) presetNameInput.value = '';
-        updatePresetsList();
-        showNotification('Preset saved successfully!', 'success');
-    } catch (error) {
-        showNotification('Failed to save preset. Storage may be full.', 'error');
-        presets.pop();
-    }
-}
-
-function updatePresetsList() {
-    if (!presetsList) return;
-    
-    presetsList.innerHTML = '';
-    
-    presets.forEach((preset, index) => {
-        const item = document.createElement('div');
-        item.className = 'list-item';
-        
-        item.innerHTML = `
-            <div class="list-item-content">
-                <div class="list-item-name">${preset.name}</div>
-                <div class="list-item-detail">${preset.bpm} BPM</div>
-            </div>
-            <div class="list-item-actions">
-                <button class="btn-icon" aria-label="Load preset ${preset.name}" data-action="load" data-index="${index}">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2L8 6h3v6h2V6h3l-4-4zM5 18v-2h14v2H5z"/>
-                    </svg>
-                </button>
-                <button class="btn-icon danger" aria-label="Delete preset ${preset.name}" data-action="delete" data-index="${index}">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-                    </svg>
-                </button>
-            </div>
-        `;
-        
-        // Add button listeners
-        const buttons = item.querySelectorAll('.btn-icon');
-        buttons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const action = btn.dataset.action;
-                const idx = parseInt(btn.dataset.index);
-                
-                if (action === 'load') {
-                    loadPreset(idx);
-                } else if (action === 'delete') {
-                    deletePreset(idx);
-                }
-            });
-        });
-        
-        presetsList.appendChild(item);
-    });
-}
-
-function loadPreset(index) {
-    const preset = presets[index];
-    if (!preset) return;
-    
-    try {
-        // Validate preset data
-        if (!preset.bpm || preset.bpm < 30 || preset.bpm > 300) {
-            showNotification('Invalid BPM in preset.', 'error');
-            return;
-        }
-        
-        if (bpmInput) bpmInput.value = preset.bpm;
-        appState.updateBpm(preset.bpm);
-        
-        // Safely load custom subdivisions
-        if (Array.isArray(preset.customSubdivisions)) {
-            customSubdivisions = preset.customSubdivisions.filter(sub => 
-                sub && typeof sub.name === 'string' && typeof sub.factor === 'number' &&
-                sub.factor > 0 && sub.factor <= 10
-            );
-        } else {
-            customSubdivisions = [];
-        }
-        
-        updateCustomSubdivisionsList();
-        debouncedCalculate();
-        showNotification(`Preset "${preset.name}" loaded!`, 'success');
-    } catch (error) {
-        showNotification('Failed to load preset.', 'error');
-    }
-}
-
-function deletePreset(index) {
-    const preset = presets[index];
-    if (!preset) return;
-    
-    if (confirm(`Are you sure you want to delete preset "${preset.name}"?`)) {
-        try {
-            presets.splice(index, 1);
-            localStorage.setItem('delay_presets', JSON.stringify(presets));
-            updatePresetsList();
-            showNotification('Preset deleted.', 'success');
-        } catch (error) {
-            showNotification('Failed to delete preset.', 'error');
-        }
-    }
-}
-
-function initializePresets() {
-    updatePresetsList();
-    
-    // Clean up localStorage if needed
-    try {
-        const usage = JSON.stringify(presets).length;
-        if (usage > 1000000) { // ~1MB limit
-            console.warn('Presets storage approaching limit');
-            showNotification('Storage approaching limit. Consider removing old presets.', 'error');
-        }
-    } catch (error) {
-        console.warn('Failed to check storage usage:', error);
-    }
-}
-
-/* =========================
-   Enhanced Notification System
-========================= */
-let notificationTimeout;
-
-function showNotification(message, type = 'success', duration = 3000) {
-    if (!notification) return;
-    
-    // Clear any existing notification
-    if (notificationTimeout) {
-        clearTimeout(notificationTimeout);
-        notification.classList.remove('show');
-    }
-    
-    // Sanitize message
-    const sanitizedMessage = String(message).replace(/[<>\"'&]/g, '');
-    
-    notification.textContent = sanitizedMessage;
-    notification.className = `notification ${type}`;
-    notification.classList.add('show');
-    
-    notificationTimeout = setTimeout(() => {
-        notification.classList.remove('show');
-        notificationTimeout = null;
-    }, Math.max(1000, Math.min(10000, duration)));
-}
-
-/* =========================
-   Enhanced Pop-up System
-========================= */
-function initializePopup() {
-    if (delayPopup) {
-        delayPopup.addEventListener('click', hideDelayPopup);
-    }
-}
-
-function showDelayPopup(delayMs) {
-    if (!delayPopup || !popupContent) return;
-    
-    // Validate and sanitize input
-    const delay = parseFloat(delayMs);
-    if (isNaN(delay) || delay <= 0) {
-        return;
-    }
-    
-    // Create safe HTML content
-    const iconSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    iconSvg.setAttribute('class', 'popup-icon');
-    iconSvg.setAttribute('viewBox', '0 0 24 24');
-    iconSvg.setAttribute('width', '48');
-    iconSvg.setAttribute('height', '48');
-    iconSvg.setAttribute('fill', 'var(--success-500)');
-    
-    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-    path.setAttribute('d', 'M9 16.17L4.83 12l-1.42 1.42L9 19 21 7l-1.42-1.42z');
-    iconSvg.appendChild(path);
-    
-    const span = document.createElement('span');
-    span.textContent = `${delay.toFixed(2)} ms`;
-    
-    // Clear and populate popup content
-    popupContent.innerHTML = '';
-    popupContent.appendChild(iconSvg);
-    popupContent.appendChild(span);
-    
-    delayPopup.setAttribute('aria-hidden', 'false');
-    delayPopup.style.display = 'block';
-    
-    // Auto-hide after 2 seconds
-    setTimeout(hideDelayPopup, 2000);
-}
-
-function hideDelayPopup() {
-    if (delayPopup) {
-        delayPopup.setAttribute('aria-hidden', 'true');
-        delayPopup.style.display = 'none';
-    }
-}
-
-/* =========================
-   Keyboard Navigation and Accessibility
-========================= */
-function initializeKeyboardNavigation() {
-    document.addEventListener('keydown', (e) => {
-        // Ctrl/Cmd + Enter to calculate
-        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
-            e.preventDefault();
-            if (bpmInput?.value) {
-                handleCalculate();
-            }
-        }
-        
-        // Space to tap tempo when focused on tap button
-        if (e.key === ' ' && document.activeElement === tapBtn) {
-            e.preventDefault();
-            handleTapTempo();
-        }
-        
-        // Escape to close modals
-        if (e.key === 'Escape') {
-            if (helpModal?.getAttribute('aria-hidden') === 'false') {
-                hideHelpModal();
-            }
-            if (delayPopup?.getAttribute('aria-hidden') === 'false') {
-                hideDelayPopup();
-            }
-        }
-        
-        // T to focus tap button
-        if (e.key === 't' && !isInputFocused()) {
-            e.preventDefault();
-            tapBtn?.focus();
-        }
-        
-        // B to focus BPM input
-        if (e.key === 'b' && !isInputFocused()) {
-            e.preventDefault();
-            bpmInput?.focus();
-        }
-    });
-}
-
-function isInputFocused() {
-    const activeElement = document.activeElement;
-    return activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA');
-}
-
-/* =========================
-   Event Listeners
-========================= */
-if (calculateBtn) {
-    calculateBtn.addEventListener('click', handleCalculate);
-}
-
-if (bpmInput) {
-    bpmInput.addEventListener('input', debouncedCalculate);
-}
-
-/* =========================
-   Help Modal Functionality
-========================= */
-if (helpBtn) {
-    helpBtn.addEventListener('click', showHelpModal);
-}
-
-if (closeHelpModal) {
-    closeHelpModal.addEventListener('click', hideHelpModal);
-}
-
-function showHelpModal() {
-    if (helpModal) {
-        helpModal.style.display = 'flex';
-        helpModal.setAttribute('aria-hidden', 'false');
-        document.body.style.overflow = 'hidden';
-    }
-}
-
-function hideHelpModal() {
-    if (helpModal) {
-        helpModal.style.display = 'none';
-        helpModal.setAttribute('aria-hidden', 'true');
-        document.body.style.overflow = '';
-    }
-}
-
-// Close modal when clicking outside
-if (helpModal) {
-    helpModal.addEventListener('click', (event) => {
-        if (event.target === helpModal) {
-            hideHelpModal();
-        }
-    });
-}
-
-/* =========================
-   Enhanced PWA Install Functionality
-========================= */
-
-// PWA Install Management
-class PWAInstaller {
-    constructor() {
-        this.deferredPrompt = null;
-        this.isInstalled = false;
-        this.isStandalone = false;
-        
-        this.init();
-    }
-    
-    init() {
-        this.checkInstallStatus();
-        this.setupEventListeners();
-        this.createInstallPrompt();
-    }
-    
-    checkInstallStatus() {
-        // Check if running as PWA
-        this.isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-                           window.navigator.standalone === true;
-        
-        if (this.isStandalone) {
-            console.log('🚀 Running as installed PWA');
-            document.body.classList.add('pwa-mode');
-            this.hideInstallButton();
-        }
-        
-        // Check if already installed (rough detection)
-        this.isInstalled = this.isStandalone || 
-                          localStorage.getItem('pwa-installed') === 'true';
-    }
-    
-    setupEventListeners() {
-        // Listen for install prompt
-        window.addEventListener('beforeinstallprompt', (e) => {
-            console.log('📱 PWA install prompt available');
-            e.preventDefault();
-            this.deferredPrompt = e;
-            this.showInstallButton();
-        });
-        
-        // Listen for successful installation
-        window.addEventListener('appinstalled', (e) => {
-            console.log('✅ PWA installed successfully');
-            this.handleInstallSuccess();
-        });
-        
-        // Network status monitoring
-        window.addEventListener('online', () => {
-            this.hideOfflineIndicator();
-        });
-        
-        window.addEventListener('offline', () => {
-            this.showOfflineIndicator();
-        });
-    }
-    
-    createInstallPrompt() {
-        // Create custom install prompt overlay
-        const promptHtml = `
-            <div id="pwa-install-prompt" class="pwa-install-prompt">
-                <div class="pwa-install-prompt-content">
-                    <div class="pwa-install-prompt-icon">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2L8 6h3v6h2V6h3l-4-4zM5 18v-2h14v2H5z"/>
-                        </svg>
-                    </div>
-                    <div class="pwa-install-prompt-text">
-                        <div class="pwa-install-prompt-title">Install quadra.calc</div>
-                        <div class="pwa-install-prompt-subtitle">Get instant access and offline support</div>
-                    </div>
-                </div>
-                <div class="pwa-install-prompt-actions">
-                    <button class="btn-install-accept">Install</button>
-                    <button class="btn-install-dismiss">Later</button>
-                </div>
-            </div>
-        `;
-        
-        document.body.insertAdjacentHTML('beforeend', promptHtml);
-        
-        // Add event listeners
-        const prompt = document.getElementById('pwa-install-prompt');
-        const acceptBtn = prompt?.querySelector('.btn-install-accept');
-        const dismissBtn = prompt?.querySelector('.btn-install-dismiss');
-        
-        acceptBtn?.addEventListener('click', () => this.triggerInstall());
-        dismissBtn?.addEventListener('click', () => this.dismissInstallPrompt());
-    }
-    
-    showInstallButton() {
-        if (installBtn && !this.isInstalled) {
-            installBtn.style.display = 'flex';
-            installBtn.classList.add('pulse');
-            
-            // Show custom prompt after delay
-            setTimeout(() => {
-                this.showInstallPrompt();
-            }, 3000);
-            
-            showNotification('Install quadra.calc for the best experience!', 'success', 5000);
-        }
-    }
-    
-    hideInstallButton() {
-        if (installBtn) {
-            installBtn.style.display = 'none';
-            installBtn.classList.remove('pulse');
-        }
-    }
-    
-    showInstallPrompt() {
-        const prompt = document.getElementById('pwa-install-prompt');
-        if (prompt && !this.isInstalled) {
-            prompt.classList.add('show');
-        }
-    }
-    
-    dismissInstallPrompt() {
-        const prompt = document.getElementById('pwa-install-prompt');
-        if (prompt) {
-            prompt.classList.remove('show');
-        }
-        
-        // Don't show again for this session
-        sessionStorage.setItem('install-prompt-dismissed', 'true');
-    }
-    
-    async triggerInstall() {
-        if (this.deferredPrompt) {
-            try {
-                this.deferredPrompt.prompt();
-                const { outcome } = await this.deferredPrompt.userChoice;
-                
-                console.log('🎯 Install prompt result:', outcome);
-                
-                if (outcome === 'accepted') {
-                    this.handleInstallSuccess();
-                } else {
-                    showNotification('Installation canceled', 'error');
-                    this.dismissInstallPrompt();
-                }
-                
-                this.deferredPrompt = null;
-                
-            } catch (error) {
-                console.error('❌ Install prompt error:', error);
-                showNotification('Installation failed', 'error');
-            }
-        }
-    }
-    
-    handleInstallSuccess() {
-        this.isInstalled = true;
-        localStorage.setItem('pwa-installed', 'true');
-        
-        this.hideInstallButton();
-        this.dismissInstallPrompt();
-        
-        showNotification('🎉 quadra.calc installed successfully!', 'success');
-        
-        // Add PWA badge to footer
-        this.addPWABadge();
-    }
-    
-    addPWABadge() {
-        const footer = document.querySelector('.app-footer');
-        if (footer && !footer.querySelector('.pwa-badge')) {
-            const badge = document.createElement('div');
-            badge.className = 'pwa-badge';
-            badge.innerHTML = `
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                </svg>
-                Installed as PWA
-            `;
-            footer.appendChild(badge);
-        }
-    }
-    
-    showOfflineIndicator() {
-        let indicator = document.getElementById('offline-indicator');
-        if (!indicator) {
-            indicator = document.createElement('div');
-            indicator.id = 'offline-indicator';
-            indicator.className = 'offline-indicator';
-            indicator.textContent = '📶 You\'re offline - using cached version';
-            document.body.appendChild(indicator);
-        }
-        indicator.classList.add('show');
-    }
-    
-    hideOfflineIndicator() {
-        const indicator = document.getElementById('offline-indicator');
-        if (indicator) {
-            indicator.classList.remove('show');
-        }
-    }
-}
-
-// Initialize PWA installer
-const pwaInstaller = new PWAInstaller();
-
-// Legacy install button support
-if (installBtn) {
-    installBtn.addEventListener('click', () => {
-        pwaInstaller.triggerInstall();
-    });
+    appState.history = JSON.parse(localStorage.getItem('bpm_history') || '[]').slice(0, 20);
+} catch (e) {
+    console.warn('Failed to load state:', e);
 }
 
 /* =========================
    Utility Functions
 ========================= */
-function debounce(func, delay) {
-    let timeoutId;
-    return function(...args) {
-        if (timeoutId) clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-            func.apply(this, args);
-        }, delay);
+function saveState() {
+    try {
+        localStorage.setItem('quadra_state', JSON.stringify({
+            sampleRate: appState.sampleRate,
+            displayMode: appState.displayMode,
+            hapticEnabled: appState.hapticEnabled
+        }));
+    } catch (e) {}
+}
+
+function haptic(type = 'light') {
+    if (!appState.hapticEnabled || !navigator.vibrate) return;
+    const patterns = {
+        light: [10],
+        medium: [20],
+        heavy: [30],
+        success: [10, 50, 20],
+        error: [50, 30, 50]
     };
+    navigator.vibrate(patterns[type] || patterns.light);
+}
+
+function showNotification(message, type = 'success') {
+    if (!notification) return;
+    notification.textContent = message;
+    notification.className = `toast show ${type}`;
+    setTimeout(() => notification.classList.remove('show'), 2500);
+}
+
+function copyToClipboard(text, callback) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(callback).catch(() => {
+            fallbackCopy(text, callback);
+        });
+    } else {
+        fallbackCopy(text, callback);
+    }
+}
+
+function fallbackCopy(text, callback) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    if (callback) callback();
 }
 
 /* =========================
-   Legacy Support Functions (for compatibility)
+   Navigation
 ========================= */
-// These functions maintain compatibility with existing functionality
-function populateSuggestions(delayTimes) {
-    // This maintains compatibility with any legacy code
-    populateDelayCards(delayTimes);
+function switchView(viewName) {
+    appState.currentView = viewName;
+
+    // Update views
+    document.querySelectorAll('.view').forEach(view => {
+        view.classList.toggle('active', view.dataset.view === viewName);
+    });
+
+    // Update nav
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.view === viewName);
+    });
+
+    // Refresh results when switching to results view
+    if (viewName === 'results') {
+        updateResultsBpm();
+        populateDelayCards();
+    }
+
+    haptic('light');
 }
 
-function updateCustomSubdivisionsTable() {
-    updateCustomSubdivisionsList();
+if (bottomNav) {
+    bottomNav.addEventListener('click', (e) => {
+        const navItem = e.target.closest('.nav-item');
+        if (navItem) {
+            switchView(navItem.dataset.view);
+        }
+    });
 }
 
-function updatePresetsTable() {
-    updatePresetsList();
+/* =========================
+   BPM Management
+========================= */
+function updateBpm(bpm, addToHistory = true) {
+    bpm = Math.max(30, Math.min(300, Math.round(bpm)));
+    appState.currentBpm = bpm;
+
+    // Update all BPM displays (both BPM view and Tap view)
+    if (bpmInput) bpmInput.value = bpm;
+    if (tapBpmDisplay) tapBpmDisplay.textContent = bpm;
+    if (tapBpmInput) tapBpmInput.value = bpm;
+
+    // Update all results
+    updateQuickResults();
+    updateTapQuickResults();
+    updateResultsBpm();
+
+    if (addToHistory) {
+        addBpmToHistory(bpm);
+    }
+
+    if (metronome.isPlaying) {
+        metronome.updateBpm(bpm);
+    }
 }
 
-// Populate legacy tables if they exist (for backward compatibility)
-function populateLegacyTables(delayTimes) {
-    if (suggestionsTable?.querySelector('tbody')) {
-        const tbody = suggestionsTable.querySelector('tbody');
-        tbody.innerHTML = '';
-        
-        Object.entries(delayTimes).forEach(([subdivision, data]) => {
-            const row = tbody.insertRow();
-            row.classList.add('clickable-row');
-            const cell1 = row.insertCell(0);
-            const cell2 = row.insertCell(1);
-            cell1.textContent = subdivision;
-            cell2.textContent = `${data.ms.toFixed(2)} ms`;
+function updateQuickResults() {
+    const bpm = appState.currentBpm;
+    const beat = 60000 / bpm;
+
+    if (qrQuarter) qrQuarter.textContent = formatValue(beat);
+    if (qrEighth) qrEighth.textContent = formatValue(beat / 2);
+    if (qrSixteenth) qrSixteenth.textContent = formatValue(beat / 4);
+    if (qrTriplet) qrTriplet.textContent = formatValue(beat / 3);
+}
+
+function updateResultsBpm() {
+    if (resultsBpmDisplay) {
+        resultsBpmDisplay.textContent = appState.currentBpm;
+    }
+}
+
+function formatValue(ms) {
+    const mode = appState.displayMode;
+    switch (mode) {
+        case 'seconds':
+            return (ms / 1000).toFixed(4) + ' s';
+        case 'samples':
+            return Math.round((ms / 1000) * appState.sampleRate).toLocaleString() + ' smp';
+        case 'hz':
+            return (1000 / ms).toFixed(3) + ' Hz';
+        default:
+            return ms.toFixed(2) + ' ms';
+    }
+}
+
+function getRawValue(ms) {
+    const mode = appState.displayMode;
+    switch (mode) {
+        case 'seconds': return (ms / 1000).toFixed(4);
+        case 'samples': return Math.round((ms / 1000) * appState.sampleRate).toString();
+        case 'hz': return (1000 / ms).toFixed(3);
+        default: return ms.toFixed(2);
+    }
+}
+
+// BPM Input
+if (bpmInput) {
+    bpmInput.addEventListener('input', () => {
+        const val = parseInt(bpmInput.value);
+        if (val >= 30 && val <= 300) {
+            updateBpm(val);
+        }
+    });
+
+    bpmInput.addEventListener('blur', () => {
+        bpmInput.value = appState.currentBpm;
+    });
+}
+
+// BPM +/- buttons
+if (bpmDecreaseBtn) {
+    bpmDecreaseBtn.addEventListener('click', () => {
+        updateBpm(appState.currentBpm - 1);
+        haptic('light');
+    });
+}
+
+if (bpmIncreaseBtn) {
+    bpmIncreaseBtn.addEventListener('click', () => {
+        updateBpm(appState.currentBpm + 1);
+        haptic('light');
+    });
+}
+
+// BPM Half/Double
+if (bpmHalfBtn) {
+    bpmHalfBtn.addEventListener('click', () => {
+        if (appState.currentBpm >= 60) {
+            updateBpm(Math.round(appState.currentBpm / 2));
+            haptic('medium');
+            showNotification(`BPM: ${appState.currentBpm}`, 'success');
+        }
+    });
+}
+
+if (bpmDoubleBtn) {
+    bpmDoubleBtn.addEventListener('click', () => {
+        if (appState.currentBpm <= 150) {
+            updateBpm(appState.currentBpm * 2);
+            haptic('medium');
+            showNotification(`BPM: ${appState.currentBpm}`, 'success');
+        }
+    });
+}
+
+/* =========================
+   History
+========================= */
+function addBpmToHistory(bpm) {
+    if (appState.history[0]?.bpm === bpm) return;
+
+    appState.history.unshift({ bpm, time: Date.now() });
+    appState.history = appState.history.slice(0, 20);
+
+    try {
+        localStorage.setItem('bpm_history', JSON.stringify(appState.history));
+    } catch (e) {}
+
+    renderHistory();
+}
+
+function renderHistory() {
+    if (!historyList) return;
+
+    historyList.innerHTML = appState.history.slice(0, 10).map(item =>
+        `<button class="history-item" data-bpm="${item.bpm}">${item.bpm}</button>`
+    ).join('');
+}
+
+if (historyList) {
+    historyList.addEventListener('click', (e) => {
+        const item = e.target.closest('.history-item');
+        if (item) {
+            updateBpm(parseInt(item.dataset.bpm), false);
+            haptic('light');
+        }
+    });
+}
+
+// Quick results click to copy
+document.querySelectorAll('.quick-result-item').forEach(item => {
+    item.addEventListener('click', () => {
+        const value = item.querySelector('.qr-value')?.textContent;
+        if (value) {
+            copyToClipboard(value.split(' ')[0], () => {
+                haptic('success');
+                showNotification(`Copied: ${value}`, 'success');
+            });
+        }
+    });
+});
+
+/* =========================
+   Tap Tempo (Main View)
+========================= */
+let tapTimes = [];
+const maxTaps = 12;  // More taps for better accuracy
+
+function handleTap() {
+    const now = performance.now();
+
+    // No timeout - BPM stays until manually reset
+    tapTimes.push(now);
+    if (tapTimes.length > maxTaps) {
+        tapTimes.shift();
+    }
+
+    if (tapTimes.length >= 2) {
+        const intervals = [];
+        for (let i = 1; i < tapTimes.length; i++) {
+            intervals.push(tapTimes[i] - tapTimes[i - 1]);
+        }
+        const avgInterval = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+        const bpm = Math.round(60000 / avgInterval);
+
+        if (bpm >= 30 && bpm <= 300) {
+            // Auto-apply the BPM immediately
+            updateBpmFromTap(bpm);
+        }
+    }
+
+    if (tapCountDisplay) {
+        tapCountDisplay.textContent = `${tapTimes.length} ${tapTimes.length === 1 ? 'tap' : 'taps'}`;
+    }
+
+    // Visual feedback
+    if (tapBtn) {
+        tapBtn.classList.add('tapping');
+        setTimeout(() => tapBtn.classList.remove('tapping'), 100);
+    }
+
+    haptic('medium');
+}
+
+// Update BPM from tap - updates everything including tap view results
+function updateBpmFromTap(bpm) {
+    bpm = Math.max(30, Math.min(300, Math.round(bpm)));
+    appState.currentBpm = bpm;
+
+    // Update all BPM displays
+    if (tapBpmDisplay) tapBpmDisplay.textContent = bpm;
+    if (tapBpmInput) tapBpmInput.value = bpm;
+    if (bpmInput) bpmInput.value = bpm;
+
+    // Update all results
+    updateQuickResults();
+    updateTapQuickResults();
+    updateResultsBpm();
+
+    // Update metronome if playing
+    if (metronome.isPlaying) {
+        metronome.updateBpm(bpm);
+    }
+}
+
+// Update tap view quick results
+function updateTapQuickResults() {
+    const bpm = appState.currentBpm;
+    const beat = 60000 / bpm;
+
+    if (tapQrQuarter) tapQrQuarter.textContent = formatValue(beat);
+    if (tapQrEighth) tapQrEighth.textContent = formatValue(beat / 2);
+    if (tapQrSixteenth) tapQrSixteenth.textContent = formatValue(beat / 4);
+    if (tapQrTriplet) tapQrTriplet.textContent = formatValue(beat / 3);
+    if (tapQrDotted) tapQrDotted.textContent = formatValue(beat * 0.75);
+    if (tapQrWhole) tapQrWhole.textContent = formatValue(beat * 4);
+}
+
+function resetTap() {
+    tapTimes = [];
+    if (tapCountDisplay) tapCountDisplay.textContent = 'Tap to detect tempo';
+    // Keep the current BPM - don't reset it
+}
+
+if (tapBtn) {
+    tapBtn.addEventListener('click', handleTap);
+    tapBtn.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        handleTap();
+    }, { passive: false });
+}
+
+if (tapResetBtn) {
+    tapResetBtn.addEventListener('click', () => {
+        resetTap();
+        haptic('light');
+    });
+}
+
+// Tap view BPM input
+if (tapBpmInput) {
+    tapBpmInput.addEventListener('input', () => {
+        const val = parseInt(tapBpmInput.value);
+        if (val >= 30 && val <= 300) {
+            updateBpmFromTap(val);
+            addBpmToHistory(val);
+        }
+    });
+
+    tapBpmInput.addEventListener('blur', () => {
+        tapBpmInput.value = appState.currentBpm;
+    });
+}
+
+// Tap view BPM +/- buttons
+if (tapBpmDown) {
+    tapBpmDown.addEventListener('click', () => {
+        updateBpmFromTap(appState.currentBpm - 1);
+        addBpmToHistory(appState.currentBpm);
+        haptic('light');
+    });
+}
+
+if (tapBpmUp) {
+    tapBpmUp.addEventListener('click', () => {
+        updateBpmFromTap(appState.currentBpm + 1);
+        addBpmToHistory(appState.currentBpm);
+        haptic('light');
+    });
+}
+
+// Tap view metronome toggle
+if (metronomeTapToggle) {
+    metronomeTapToggle.addEventListener('click', () => {
+        metronome.toggle(appState.currentBpm);
+        metronomeTapToggle.classList.toggle('active', metronome.isPlaying);
+        if (metronomeToggle) metronomeToggle.classList.toggle('active', metronome.isPlaying);
+        haptic('medium');
+        showNotification(metronome.isPlaying ? `Metronome: ${appState.currentBpm} BPM` : 'Metronome stopped', 'success');
+    });
+}
+
+// Tap view theme toggle
+if (themeTapToggle) {
+    themeTapToggle.addEventListener('click', () => {
+        const isDark = document.body.dataset.theme === 'dark';
+        document.body.dataset.theme = isDark ? 'light' : 'dark';
+        localStorage.setItem('theme', document.body.dataset.theme);
+        haptic('light');
+    });
+}
+
+// Tap quick results click to copy
+if (tapResultsContainer) {
+    tapResultsContainer.addEventListener('click', (e) => {
+        const item = e.target.closest('.tap-result-item');
+        if (!item) return;
+
+        const valueEl = item.querySelector('.tap-result-value');
+        if (valueEl) {
+            const value = valueEl.textContent.split(' ')[0];
+            copyToClipboard(value, () => {
+                item.classList.add('copied');
+                setTimeout(() => item.classList.remove('copied'), 500);
+                haptic('success');
+                showNotification(`Copied: ${valueEl.textContent}`, 'success');
+            });
+        }
+    });
+}
+
+/* =========================
+   Metronome
+========================= */
+const metronome = {
+    audioContext: null,
+    isPlaying: false,
+    bpm: 120,
+    nextNoteTime: 0,
+    timerWorker: null,
+    beatCount: 0,
+
+    init() {
+        if (!this.audioContext) {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+    },
+
+    playClick(time, isAccent = false) {
+        const osc = this.audioContext.createOscillator();
+        const gain = this.audioContext.createGain();
+        osc.connect(gain);
+        gain.connect(this.audioContext.destination);
+        osc.frequency.value = isAccent ? 1000 : 800;
+        gain.gain.setValueAtTime(isAccent ? 0.5 : 0.3, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.1);
+        osc.start(time);
+        osc.stop(time + 0.1);
+    },
+
+    scheduler() {
+        while (this.nextNoteTime < this.audioContext.currentTime + 0.1) {
+            const isAccent = this.beatCount % 4 === 0;
+            this.playClick(this.nextNoteTime, isAccent);
+
+            const beatIndex = this.beatCount % 4;
+            setTimeout(() => {
+                beatDots.forEach((dot, i) => {
+                    if (dot) dot.classList.toggle('active', i === beatIndex);
+                });
+            }, (this.nextNoteTime - this.audioContext.currentTime) * 1000);
+
+            this.nextNoteTime += 60 / this.bpm;
+            this.beatCount++;
+        }
+    },
+
+    start(bpm) {
+        this.init();
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume();
+        }
+
+        this.bpm = bpm || 120;
+        this.isPlaying = true;
+        this.beatCount = 0;
+        this.nextNoteTime = this.audioContext.currentTime;
+
+        if (metronomeToggle) metronomeToggle.classList.add('active');
+
+        this.timerWorker = setInterval(() => this.scheduler(), 25);
+    },
+
+    stop() {
+        this.isPlaying = false;
+        if (this.timerWorker) {
+            clearInterval(this.timerWorker);
+            this.timerWorker = null;
+        }
+        if (metronomeToggle) metronomeToggle.classList.remove('active');
+        beatDots.forEach(dot => dot?.classList.remove('active'));
+    },
+
+    toggle(bpm) {
+        if (this.isPlaying) {
+            this.stop();
+        } else {
+            this.start(bpm);
+        }
+    },
+
+    updateBpm(bpm) {
+        this.bpm = bpm;
+    }
+};
+
+if (metronomeToggle) {
+    metronomeToggle.addEventListener('click', () => {
+        metronome.toggle(appState.currentBpm);
+        haptic('medium');
+        showNotification(metronome.isPlaying ? `Metronome: ${appState.currentBpm} BPM` : 'Metronome stopped', 'success');
+    });
+}
+
+/* =========================
+   MIDI Sync
+========================= */
+const midiSync = {
+    midiAccess: null,
+    isListening: false,
+    clockTimes: [],
+    timeout: null,
+    supported: 'requestMIDIAccess' in navigator,
+
+    async init() {
+        if (!this.supported) throw new Error('MIDI not supported');
+        this.midiAccess = await navigator.requestMIDIAccess({ sysex: false });
+        return this.midiAccess;
+    },
+
+    async startListening() {
+        if (!this.midiAccess) await this.init();
+
+        this.isListening = true;
+        this.clockTimes = [];
+
+        if (midiSyncBtn) midiSyncBtn.classList.add('listening');
+        if (midiStatus) midiStatus.textContent = 'Waiting for MIDI clock...';
+
+        return new Promise((resolve, reject) => {
+            this.timeout = setTimeout(() => {
+                this.stopListening();
+                reject(new Error('No MIDI clock received'));
+            }, 10000);
+
+            const handleMessage = (event) => {
+                if (event.data[0] === 0xF8) {
+                    this.clockTimes.push(performance.now());
+
+                    if (this.clockTimes.length >= 48) {
+                        const bpm = this.calculateBPM();
+                        if (this.clockTimes.length >= 96 || this.isStable()) {
+                            this.stopListening();
+                            clearTimeout(this.timeout);
+                            resolve({ bpm: Math.round(bpm), ticks: this.clockTimes.length });
+                        }
+                    }
+
+                    if (midiStatus && this.clockTimes.length >= 24) {
+                        midiStatus.textContent = `~${Math.round(this.calculateBPM())} BPM`;
+                    }
+                }
+            };
+
+            this.midiAccess.inputs.forEach(input => {
+                input.onmidimessage = handleMessage;
+            });
+        });
+    },
+
+    stopListening() {
+        this.isListening = false;
+        if (this.timeout) clearTimeout(this.timeout);
+        if (this.midiAccess) {
+            this.midiAccess.inputs.forEach(input => input.onmidimessage = null);
+        }
+        if (midiSyncBtn) midiSyncBtn.classList.remove('listening');
+        if (midiStatus) midiStatus.textContent = '';
+    },
+
+    calculateBPM() {
+        if (this.clockTimes.length < 2) return 0;
+        const intervals = [];
+        for (let i = 1; i < this.clockTimes.length; i++) {
+            intervals.push(this.clockTimes[i] - this.clockTimes[i - 1]);
+        }
+        const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+        return 60000 / (avg * 24);
+    },
+
+    isStable() {
+        if (this.clockTimes.length < 72) return false;
+        const mid = Math.floor(this.clockTimes.length / 2);
+        const first = this.clockTimes.slice(0, mid);
+        const second = this.clockTimes.slice(mid);
+        const bpm1 = this.calculateBPMFromTicks(first);
+        const bpm2 = this.calculateBPMFromTicks(second);
+        return Math.abs(bpm1 - bpm2) < 0.5;
+    },
+
+    calculateBPMFromTicks(ticks) {
+        const intervals = [];
+        for (let i = 1; i < ticks.length; i++) {
+            intervals.push(ticks[i] - ticks[i - 1]);
+        }
+        const avg = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+        return 60000 / (avg * 24);
+    }
+};
+
+if (midiSyncBtn) {
+    if (!midiSync.supported) {
+        midiSyncBtn.disabled = true;
+        midiSyncBtn.style.opacity = '0.5';
+    } else {
+        midiSyncBtn.addEventListener('click', async () => {
+            if (midiSync.isListening) {
+                midiSync.stopListening();
+                return;
+            }
+
+            try {
+                haptic('light');
+                showNotification('Listening for MIDI clock...', 'success');
+                const result = await midiSync.startListening();
+                updateBpm(result.bpm);
+                haptic('success');
+                showNotification(`MIDI Sync: ${result.bpm} BPM`, 'success');
+            } catch (err) {
+                haptic('error');
+                showNotification(err.message, 'error');
+            }
         });
     }
 }
 
-// Math verification function for development
-function testBpmMath() {
-    console.log('=== BPM Math Verification ===');
-    
-    // Test cases: [interval_ms, expected_bpm]
-    const testCases = [
-        [500, 120],   // 500ms interval = 120 BPM
-        [600, 100],   // 600ms interval = 100 BPM  
-        [400, 150],   // 400ms interval = 150 BPM
-        [1000, 60],   // 1000ms interval = 60 BPM
-        [300, 200],   // 300ms interval = 200 BPM
-    ];
-    
-    testCases.forEach(([interval, expectedBpm]) => {
-        const calculatedBpm = Math.round(60000 / interval);
-        const isCorrect = calculatedBpm === expectedBpm;
-        console.log(`${interval}ms → ${calculatedBpm} BPM (expected ${expectedBpm}) ${isCorrect ? '✅' : '❌'}`);
-    });
-    
-    console.log('=== End Verification ===');
+/* =========================
+   Delay Calculations
+========================= */
+function getSubdivisions() {
+    const beat = 60000 / appState.currentBpm;
+
+    const subdivisions = {
+        'Simple': [
+            { name: 'Whole Note (1/1)', factor: 4, note: '4 beats' },
+            { name: 'Half Note (1/2)', factor: 2, note: '2 beats' },
+            { name: 'Quarter Note (1/4)', factor: 1, note: '1 beat' },
+            { name: 'Eighth Note (1/8)', factor: 0.5, note: '1/2 beat' },
+            { name: 'Sixteenth Note (1/16)', factor: 0.25, note: '1/4 beat' },
+            { name: 'Thirty-Second (1/32)', factor: 0.125, note: '1/8 beat' }
+        ],
+        'Dotted': [
+            { name: 'Dotted Half', factor: 3, note: '3 beats' },
+            { name: 'Dotted Quarter', factor: 1.5, note: '1.5 beats' },
+            { name: 'Dotted Eighth', factor: 0.75, note: '0.75 beats' },
+            { name: 'Dotted Sixteenth', factor: 0.375, note: '0.375 beats' }
+        ],
+        'Triplet': [
+            { name: 'Half Note Triplet', factor: 2/3, note: '0.67 beats' },
+            { name: 'Quarter Note Triplet', factor: 1/3, note: '0.33 beats' },
+            { name: 'Eighth Note Triplet', factor: 1/6, note: '0.17 beats' },
+            { name: 'Sixteenth Triplet', factor: 1/12, note: '0.083 beats' }
+        ],
+        'Creative': [
+            { name: 'Golden Ratio', factor: 1.618, note: 'Phi (φ)' },
+            { name: 'Golden Ratio Inv', factor: 0.618, note: '1/φ' },
+            { name: 'Quintuplet', factor: 0.4, note: '1/5 beat' },
+            { name: 'Septuplet', factor: 2/7, note: '1/7 beat' }
+        ],
+        'LFO': [
+            { name: '2 Bars', factor: 8, note: 'Slow mod' },
+            { name: '4 Bars', factor: 16, note: 'Very slow' },
+            { name: 'Swing Eighth', factor: 2/3, note: 'Swing feel' }
+        ]
+    };
+
+    // Add custom subdivisions
+    const customSubs = loadCustomSubdivisions();
+    if (customSubs.length > 0) {
+        subdivisions['Custom'] = customSubs.map(s => ({
+            name: s.name,
+            factor: s.factor,
+            note: `${s.factor}x`
+        }));
+    }
+
+    // Calculate ms values
+    const result = {};
+    for (const [category, items] of Object.entries(subdivisions)) {
+        result[category] = items.map(item => ({
+            ...item,
+            ms: beat * item.factor
+        }));
+    }
+
+    return result;
 }
 
-// Run math test in development
-if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-    testBpmMath();
+function populateDelayCards() {
+    if (!delayGrid) return;
+
+    const subdivisions = getSubdivisions();
+    const activeCategory = appState.activeCategory;
+
+    let html = '';
+
+    for (const [category, items] of Object.entries(subdivisions)) {
+        const categoryLower = category.toLowerCase();
+
+        if (activeCategory !== 'all' && categoryLower !== activeCategory) {
+            continue;
+        }
+
+        html += `<div class="category-header">${category}</div>`;
+
+        for (const item of items) {
+            html += `
+                <div class="delay-card" data-ms="${item.ms}" data-name="${item.name}">
+                    <div class="delay-info">
+                        <span class="delay-name">${item.name}</span>
+                        <span class="delay-note">${item.note}</span>
+                    </div>
+                    <span class="delay-value">${formatValue(item.ms)}</span>
+                </div>
+            `;
+        }
+    }
+
+    delayGrid.innerHTML = html;
 }
 
-console.log('🎵 quadra.calc enhanced UI/UX with PWA support loaded successfully!');
+// Delay card click handler
+if (delayGrid) {
+    delayGrid.addEventListener('click', (e) => {
+        const card = e.target.closest('.delay-card');
+        if (!card) return;
 
-// Service Worker messaging
-if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-    // Request cache cleanup periodically
-    setInterval(() => {
-        navigator.serviceWorker.controller.postMessage({
-            type: 'CACHE_CLEANUP'
+        const ms = parseFloat(card.dataset.ms);
+        const value = getRawValue(ms);
+
+        copyToClipboard(value, () => {
+            card.classList.add('copied');
+            setTimeout(() => card.classList.remove('copied'), 500);
+
+            if (popupContent) popupContent.textContent = formatValue(ms);
+            if (delayPopup) {
+                delayPopup.setAttribute('aria-hidden', 'false');
+                setTimeout(() => delayPopup.setAttribute('aria-hidden', 'true'), 1000);
+            }
+
+            haptic('success');
         });
-    }, 300000); // Every 5 minutes
+    });
 }
+
+// Category filters
+if (categoryFilters) {
+    categoryFilters.addEventListener('click', (e) => {
+        const chip = e.target.closest('.filter-chip');
+        if (!chip) return;
+
+        categoryFilters.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+
+        appState.activeCategory = chip.dataset.category;
+        populateDelayCards();
+        haptic('light');
+    });
+}
+
+// Copy all
+if (copyAllBtn) {
+    copyAllBtn.addEventListener('click', () => {
+        const subdivisions = getSubdivisions();
+        let text = `Delay Times for ${appState.currentBpm} BPM\n\n`;
+
+        for (const [category, items] of Object.entries(subdivisions)) {
+            text += `${category}:\n`;
+            for (const item of items) {
+                text += `  ${item.name}: ${formatValue(item.ms)}\n`;
+            }
+            text += '\n';
+        }
+
+        copyToClipboard(text, () => {
+            haptic('success');
+            showNotification('All values copied!', 'success');
+        });
+    });
+}
+
+// Display mode
+if (displayModeSelect) {
+    displayModeSelect.value = appState.displayMode;
+    displayModeSelect.addEventListener('change', () => {
+        appState.displayMode = displayModeSelect.value;
+        updateQuickResults();
+        populateDelayCards();
+        saveState();
+    });
+}
+
+/* =========================
+   Settings
+========================= */
+// Sample rate options
+if (sampleRateOptions) {
+    sampleRateOptions.querySelectorAll('.option-btn').forEach(btn => {
+        btn.classList.toggle('active', parseInt(btn.dataset.value) === appState.sampleRate);
+        btn.addEventListener('click', () => {
+            sampleRateOptions.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            appState.sampleRate = parseInt(btn.dataset.value);
+            saveState();
+            updateQuickResults();
+            populateDelayCards();
+            haptic('light');
+        });
+    });
+}
+
+// Display mode options
+if (displayModeOptions) {
+    displayModeOptions.querySelectorAll('.option-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.value === appState.displayMode);
+        btn.addEventListener('click', () => {
+            displayModeOptions.querySelectorAll('.option-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            appState.displayMode = btn.dataset.value;
+            if (displayModeSelect) displayModeSelect.value = appState.displayMode;
+            saveState();
+            updateQuickResults();
+            populateDelayCards();
+            haptic('light');
+        });
+    });
+}
+
+// Haptic toggle
+if (hapticToggle) {
+    hapticToggle.checked = appState.hapticEnabled;
+    hapticToggle.addEventListener('change', () => {
+        appState.hapticEnabled = hapticToggle.checked;
+        saveState();
+        if (appState.hapticEnabled) haptic('light');
+    });
+}
+
+// Theme toggle
+if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+        const isDark = document.body.dataset.theme === 'dark';
+        document.body.dataset.theme = isDark ? 'light' : 'dark';
+        localStorage.setItem('theme', document.body.dataset.theme);
+        haptic('light');
+    });
+}
+
+/* =========================
+   Custom Subdivisions
+========================= */
+let customSubdivisions = loadCustomSubdivisions();
+
+function loadCustomSubdivisions() {
+    try {
+        return JSON.parse(localStorage.getItem('custom_subdivisions') || '[]');
+    } catch (e) {
+        return [];
+    }
+}
+
+function saveCustomSubdivisions() {
+    localStorage.setItem('custom_subdivisions', JSON.stringify(customSubdivisions));
+}
+
+function renderCustomSubdivisions() {
+    if (!customSubdivisionsList) return;
+
+    if (customSubdivisions.length === 0) {
+        customSubdivisionsList.innerHTML = '';
+        return;
+    }
+
+    customSubdivisionsList.innerHTML = customSubdivisions.map((sub, i) => `
+        <div class="list-item">
+            <div>
+                <div class="list-item-name">${sub.name}</div>
+                <div class="list-item-detail">Factor: ${sub.factor}</div>
+            </div>
+            <button class="btn-icon-sm danger" data-index="${i}" aria-label="Delete">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                </svg>
+            </button>
+        </div>
+    `).join('');
+}
+
+if (addSubdivisionBtn) {
+    addSubdivisionBtn.addEventListener('click', () => {
+        const name = subdivisionNameInput?.value.trim();
+        const factor = parseFloat(subdivisionFactorInput?.value);
+
+        if (!name || isNaN(factor) || factor <= 0) {
+            showNotification('Invalid name or factor', 'error');
+            return;
+        }
+
+        customSubdivisions.push({ name, factor });
+        saveCustomSubdivisions();
+        renderCustomSubdivisions();
+        populateDelayCards();
+
+        if (subdivisionNameInput) subdivisionNameInput.value = '';
+        if (subdivisionFactorInput) subdivisionFactorInput.value = '';
+
+        haptic('success');
+        showNotification(`Added: ${name}`, 'success');
+    });
+}
+
+if (customSubdivisionsList) {
+    customSubdivisionsList.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-icon-sm');
+        if (!btn) return;
+
+        const index = parseInt(btn.dataset.index);
+        customSubdivisions.splice(index, 1);
+        saveCustomSubdivisions();
+        renderCustomSubdivisions();
+        populateDelayCards();
+        haptic('light');
+    });
+}
+
+/* =========================
+   Presets
+========================= */
+let presets = loadPresets();
+
+function loadPresets() {
+    try {
+        return JSON.parse(localStorage.getItem('presets') || '[]');
+    } catch (e) {
+        return [];
+    }
+}
+
+function savePresets() {
+    localStorage.setItem('presets', JSON.stringify(presets));
+}
+
+function renderPresets() {
+    if (!presetsList) return;
+
+    if (presets.length === 0) {
+        presetsList.innerHTML = '';
+        return;
+    }
+
+    presetsList.innerHTML = presets.map((preset, i) => `
+        <div class="list-item">
+            <div>
+                <div class="list-item-name">${preset.name}</div>
+                <div class="list-item-detail">${preset.bpm} BPM</div>
+            </div>
+            <div class="list-item-actions">
+                <button class="btn-icon-sm" data-action="load" data-index="${i}" aria-label="Load">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19 19H5V5h7V3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                    </svg>
+                </button>
+                <button class="btn-icon-sm danger" data-action="delete" data-index="${i}" aria-label="Delete">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+    `).join('');
+}
+
+if (savePresetBtn) {
+    savePresetBtn.addEventListener('click', () => {
+        const name = presetNameInput?.value.trim();
+        if (!name) {
+            showNotification('Enter a preset name', 'error');
+            return;
+        }
+
+        presets.push({
+            name,
+            bpm: appState.currentBpm,
+            sampleRate: appState.sampleRate,
+            displayMode: appState.displayMode,
+            customSubdivisions: [...customSubdivisions]
+        });
+
+        savePresets();
+        renderPresets();
+
+        if (presetNameInput) presetNameInput.value = '';
+        haptic('success');
+        showNotification(`Saved: ${name}`, 'success');
+    });
+}
+
+if (presetsList) {
+    presetsList.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-icon-sm');
+        if (!btn) return;
+
+        const index = parseInt(btn.dataset.index);
+        const action = btn.dataset.action;
+
+        if (action === 'load') {
+            const preset = presets[index];
+            updateBpm(preset.bpm);
+            appState.sampleRate = preset.sampleRate || 44100;
+            appState.displayMode = preset.displayMode || 'ms';
+            customSubdivisions = [...(preset.customSubdivisions || [])];
+
+            saveCustomSubdivisions();
+            renderCustomSubdivisions();
+            saveState();
+
+            switchView('bpm');
+            haptic('success');
+            showNotification(`Loaded: ${preset.name}`, 'success');
+        } else if (action === 'delete') {
+            presets.splice(index, 1);
+            savePresets();
+            renderPresets();
+            haptic('light');
+        }
+    });
+}
+
+/* =========================
+   Share & Export
+========================= */
+if (shareBtn) {
+    shareBtn.addEventListener('click', async () => {
+        const text = `Delay Times for ${appState.currentBpm} BPM\n\nQuarter: ${formatValue(60000/appState.currentBpm)}\nEighth: ${formatValue(30000/appState.currentBpm)}\n\nCalculated with quadra.calc`;
+
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: 'quadra.calc', text });
+                haptic('success');
+            } catch (e) {
+                if (e.name !== 'AbortError') {
+                    copyToClipboard(text, () => showNotification('Copied to clipboard', 'success'));
+                }
+            }
+        } else {
+            copyToClipboard(text, () => {
+                haptic('success');
+                showNotification('Copied to clipboard', 'success');
+            });
+        }
+    });
+}
+
+if (exportBtn) {
+    exportBtn.addEventListener('click', () => {
+        const data = {
+            bpm: appState.currentBpm,
+            sampleRate: appState.sampleRate,
+            generated: new Date().toISOString(),
+            subdivisions: getSubdivisions(),
+            customSubdivisions
+        };
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `quadra-calc-${appState.currentBpm}bpm.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        haptic('success');
+        showNotification('Exported!', 'success');
+    });
+}
+
+/* =========================
+   Initialization
+========================= */
+function init() {
+    // Load theme
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    document.body.dataset.theme = savedTheme;
+
+    // Initialize BPM displays
+    if (bpmInput) bpmInput.value = appState.currentBpm;
+    if (tapBpmDisplay) tapBpmDisplay.textContent = appState.currentBpm;
+    if (tapBpmInput) tapBpmInput.value = appState.currentBpm;
+
+    // Render all results
+    updateQuickResults();
+    updateTapQuickResults();
+    renderHistory();
+    renderCustomSubdivisions();
+    renderPresets();
+
+    console.log('quadra.calc v3.1 initialized - Tap is main view');
+}
+
+init();
+
+// Expose for debugging
+window.appState = appState;
+window.showNotification = showNotification;

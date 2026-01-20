@@ -1,20 +1,16 @@
-/* Enhanced Service Worker for quadra.calc PWA */
+/* Enhanced Service Worker for quadra.calc PWA v3.2 */
 
-const CACHE_NAME = 'quadra-calc-v2.1';
-const STATIC_CACHE = 'quadra-calc-static-v2.1';
-const DYNAMIC_CACHE = 'quadra-calc-dynamic-v2.1';
+const CACHE_NAME = 'quadra-calc-v3.2';
+const STATIC_CACHE = 'quadra-calc-static-v3.2';
+const DYNAMIC_CACHE = 'quadra-calc-dynamic-v3.2';
 
 // Assets to cache immediately (critical resources)
 const STATIC_ASSETS = [
     './',
     './index.html',
-    './index-new.html',
     './styles/styles.css',
-    './styles/styles-new.css',
     './scripts/app.js',
-    './scripts/app-new.js',
     './manifest.json',
-    './manifest-enhanced.json',
     './assets/icons/icon-192x192.png',
     './assets/icons/icon-512x512.png',
     // Google Fonts (fallback)
@@ -122,9 +118,8 @@ async function handleAppRequest(request) {
         
         // Return offline fallback for HTML pages
         if (request.headers.get('accept')?.includes('text/html')) {
-            return caches.match('./index.html') || 
-                   caches.match('./index-new.html') ||
-                   new Response('App is offline', { 
+            return caches.match('./index.html') ||
+                   new Response('App is offline', {
                        status: 503,
                        headers: { 'Content-Type': 'text/plain' }
                    });
@@ -263,4 +258,4 @@ self.addEventListener('unhandledrejection', (event) => {
     console.error('❌ Unhandled promise rejection in SW:', event.reason);
 });
 
-console.log('🎵 quadra.calc Service Worker v2.1 loaded successfully!');
+console.log('🎵 quadra.calc Service Worker v3.2 loaded successfully!');
